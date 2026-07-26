@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: qubitlens
+Version: 0.1.0
+Summary: An interactive quantum circuit analysis and visualization tool built with Qiskit.
+Author: KAMI-D-KAI
+License-Expression: MIT
+Requires-Python: <3.13,>=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: numpy<3.0,>=2.0
+Requires-Dist: qiskit<3.0,>=2.0
+Provides-Extra: dev
+Requires-Dist: pytest<10.0,>=8.0; extra == "dev"
