@@ -33,6 +33,26 @@ These are meant to stay as mathematical primitives that later analysis code can 
 
 Qiskit is QubitLens's quantum execution engine. QubitLens inspects and analyzes circuit behavior; it doesn't try to duplicate Qiskit's ability to actually run circuits. Keeping that boundary firm avoids reinventing something Qiskit already handles well, and keeps the project focused on what it's actually for: making quantum circuit behavior easier to inspect, explain, and visualize.
 
+## Analysis and Explanation Boundary
+
+The package-level separation between `core`, `analysis`, and `explanation` is
+now backed by an explicit dependency boundary.
+
+`core` remains independent of the higher-level interpretation layers.
+`analysis` may build on core foundations to turn execution data into structured
+facts, while `explanation` may consume those analysis results and shared core
+representations to produce human-readable insights.
+
+The dependency direction is intentionally one-way: core does not depend on
+analysis or explanation, and analysis does not depend on explanation. This
+keeps structured analysis reusable by future consumers such as visualization
+rather than coupling the mathematical interpretation directly to its
+presentation.
+
+No analysis or explanation APIs are introduced at this stage. Their package
+responsibilities are established now so later implementation can grow within
+those boundaries instead of defining them retroactively.
+
 ## Qubit Ordering
 
 QubitLens follows Qiskit's computational-basis ordering convention. For a two-qubit register written as `|q1 q0⟩`, qubit 0 is the least-significant bit.
