@@ -98,7 +98,11 @@ A GitHub Actions workflow reproduces the local quality checks in a fresh Linux e
 - mypy type checking
 - the full pytest suite
 
-The workflow runs on Python 3.11 and 3.12, matching the project's declared compatibility range. Since local development happens on Windows, this also works as an independent check that nothing here is quietly depending on the local environment, which felt worth building in early, before the codebase gets big enough for that kind of assumption to hide.
+The main quality job runs on Python 3.11, which is also the minimum Python version the project currently supports. Python 3.12 is checked separately by running the full test suite as a compatibility job.
+
+The first version of the CI workflow actually ran the entire quality pipeline on both versions, which exposed an interesting issue: mypy is intentionally configured to analyze against Python 3.11, but NumPy's type stubs in the Python 3.12 environment used syntax that belongs to Python 3.12. Rather than weakening the minimum-version type check just to make the matrix green, I split the responsibilities. Python 3.11 now handles linting, formatting, static type checking, and tests, while Python 3.12 independently verifies runtime compatibility.
+
+Since local development happens on Windows and CI runs on Linux, this also gives me an early check that nothing is quietly depending on my local environment.
 
 ---
 
