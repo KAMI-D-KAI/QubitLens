@@ -7,6 +7,7 @@ from qubitlens.domain.gates import (
     get_gate,
     validate_gate_operation,
 )
+from qubitlens.domain.initial_state import InitialState
 
 __all__ = [
     "Circuit",
@@ -16,4 +17,5 @@ __all__ = [
     "STANDARD_GATES",
     "get_gate",
     "validate_gate_operation",
+    "InitialState",
 ]

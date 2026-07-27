@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from qubitlens.domain.initial_state import InitialState
+
 
 @dataclass(frozen=True)
 class GateOperation:
@@ -61,11 +63,21 @@ class Circuit:
 
     num_qubits: int
     operations: tuple[CircuitOperation, ...] = ()
+    initial_state: InitialState | None = None
 
     def __post_init__(self) -> None:
         """Validate the circuit configuration."""
         if self.num_qubits < 1:
             raise ValueError("num_qubits must be at least 1")
+
+        initial_state = self.initial_state
+
+        if initial_state is None:
+            initial_state = InitialState.zero(self.num_qubits)
+            object.__setattr__(self, "initial_state", initial_state)
+
+        if initial_state.num_qubits != self.num_qubits:
+            raise ValueError("initial_state qubit count must match circuit num_qubits")
 
         for operation in self.operations:
             if isinstance(operation, GateOperation):
