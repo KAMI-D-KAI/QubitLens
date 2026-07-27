@@ -3,7 +3,6 @@
 import numpy as np
 from numpy.typing import NDArray
 
-
 ComplexMatrix = NDArray[np.complex128]
 
 

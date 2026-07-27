@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-
 ComplexVector = NDArray[np.complex128]
 
 
@@ -25,9 +24,7 @@ class QuantumState:
         dimension = amplitudes.size
 
         if dimension == 0 or dimension & (dimension - 1):
-            raise ValueError(
-                "Statevector length must be a non-zero power of two."
-            )
+            raise ValueError("Statevector length must be a non-zero power of two.")
 
         norm = np.linalg.norm(amplitudes)
 

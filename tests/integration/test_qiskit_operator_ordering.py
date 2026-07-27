@@ -1,11 +1,14 @@
 """Integration tests comparing QubitLens operator ordering with Qiskit."""
 
 import numpy as np
+import pytest
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector
 
 from qubitlens.core.gates import H, X
 from qubitlens.core.operators import build_single_qubit_operator
+
+pytestmark = pytest.mark.integration
 
 
 def test_x_on_q0_matches_qiskit() -> None:

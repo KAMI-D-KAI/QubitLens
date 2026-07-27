@@ -23,7 +23,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "mypy>=1.15,<2.0",
     "pytest>=8.0,<10.0",
+    "ruff>=0.12,<1.0",
 ]
 
 
@@ -34,3 +36,26 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+    "integration: tests that verify QubitLens behavior against external integrations such as Qiskit",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+]
+ignore = ["E741"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/qubitlens"]
+warn_return_any = true
+warn_unused_configs = true
+show_error_codes = true

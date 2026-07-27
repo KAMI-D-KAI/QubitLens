@@ -3,7 +3,6 @@
 import numpy as np
 from numpy.typing import NDArray
 
-
 ComplexMatrix = NDArray[np.complex128]
 
 
@@ -39,6 +38,9 @@ def build_single_qubit_operator(
     operator = factors[0]
 
     for factor in factors[1:]:
-        operator = np.kron(operator, factor)
+        operator = np.asarray(
+            np.kron(operator, factor),
+            dtype=np.complex128,
+        )
 
     return operator

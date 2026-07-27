@@ -39,27 +39,21 @@ def test_zero_qubit_state() -> None:
 
 def test_superposition_probabilities() -> None:
     """An equal superposition should produce equal probabilities."""
-    state = QuantumState(
-        np.array([1, 1], dtype=np.complex128) / np.sqrt(2)
-    )
+    state = QuantumState(np.array([1, 1], dtype=np.complex128) / np.sqrt(2))
 
     assert np.allclose(state.probabilities, [0.5, 0.5])
 
 
 def test_complex_amplitude_probabilities() -> None:
     """Measurement probabilities should use amplitude magnitudes."""
-    state = QuantumState(
-        np.array([1, 1j], dtype=np.complex128) / np.sqrt(2)
-    )
+    state = QuantumState(np.array([1, 1j], dtype=np.complex128) / np.sqrt(2))
 
     assert np.allclose(state.probabilities, [0.5, 0.5])
 
 
 def test_probability_by_basis_index() -> None:
     """A basis probability should be accessible by index."""
-    state = QuantumState(
-        np.array([np.sqrt(0.25), np.sqrt(0.75)])
-    )
+    state = QuantumState(np.array([np.sqrt(0.25), np.sqrt(0.75)]))
 
     assert np.isclose(state.probability(0), 0.25)
     assert np.isclose(state.probability(1), 0.75)
