@@ -32,5 +32,26 @@ Create and activate a virtual environment, then install the project in editable 
 python -m venv .venv
 python -m pip install -e ".[dev]"
 ```
-Run the test suite with:
-```bash pytest ```
+
+Run the full test suite:
+
+```bash
+pytest -q
+```
+
+Run only the Qiskit integration tests:
+
+```bash
+pytest -m integration -q
+```
+
+Run the local quality checks:
+
+```bash
+ruff check .
+ruff format --check .
+mypy
+pytest -q
+```
+
+GitHub Actions runs the quality pipeline on Python 3.11 and separately verifies runtime compatibility on Python 3.12.
