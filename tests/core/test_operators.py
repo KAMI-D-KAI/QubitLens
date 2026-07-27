@@ -71,7 +71,7 @@ def test_embedded_operator_is_unitary() -> None:
     )
 
 
-def test_target_zero_action_matches_qiskit_ordering() -> None:
+def test_target_zero_uses_little_endian_ordering() -> None:
     """X on q0 should map |00> to |01>."""
     state = np.array([1, 0, 0, 0], dtype=np.complex128)
 
@@ -86,7 +86,7 @@ def test_target_zero_action_matches_qiskit_ordering() -> None:
     assert np.allclose(operator @ state, expected)
 
 
-def test_target_one_action_matches_qiskit_ordering() -> None:
+def test_target_one_uses_little_endian_ordering() -> None:
     """X on q1 should map |00> to |10>."""
     state = np.array([1, 0, 0, 0], dtype=np.complex128)
 

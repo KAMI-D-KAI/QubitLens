@@ -105,3 +105,9 @@ def test_input_is_copied() -> None:
     amplitudes[0] = 0
 
     assert np.allclose(state.amplitudes, [1, 0])
+
+
+def test_empty_state_raises() -> None:
+    """Empty statevectors should be rejected."""
+    with pytest.raises(ValueError, match="non-zero power of two"):
+        QuantumState(np.array([], dtype=np.complex128))
