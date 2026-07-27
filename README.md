@@ -12,23 +12,25 @@ QubitLens is currently in early development.
 
 The Phase 0 foundation is complete. It established the package architecture, mathematical quantum core, Qiskit execution boundary, testing strategy, development quality tooling, and continuous integration.
 
-Development is now focused on the quantum-domain foundation needed to represent circuits and their configuration before the analysis layer is built.
+The Phase 1 quantum-domain foundation is complete. QubitLens now has its own immutable representations for circuit structure, supported gate definitions, and configurable initial quantum states while keeping quantum execution behind the Qiskit boundary.
 
-The current circuit-domain model provides immutable representations for:
+The current domain layer provides:
 
 * quantum circuits and their ordered operations
 * gate applications with targets, controls, and parameters
 * measurements from qubits into classical bits
-* structural and circuit-relative validation
-
-Gate-specific definitions and configurable initial-state representation are planned as the next parts of the quantum-domain foundation.
+* a supported gate catalogue with structural gate metadata
+* catalogue-aware gate-operation validation
+* normalized pure initial-state representations
+* all-zero and arbitrary computational-basis initial states
+* configurable circuit initial states with circuit/state dimension validation
 
 ## Architecture
 
 QubitLens separates the major responsibilities involved in understanding a quantum circuit:
 
 * **Core** provides shared mathematical and quantum foundations.
-* **Domain** represents QubitLens concepts such as circuits, gate applications, and measurements.
+* **Domain** represents QubitLens concepts such as circuits, gate applications, measurements, supported gate definitions, and initial quantum states.
 * **Qiskit** provides quantum execution and state evolution.
 * **Analysis** will convert circuit execution into structured information about what happens at each step.
 * **Explanation** will convert structured analysis into human-readable insights.
@@ -52,16 +54,25 @@ For a more detailed description of the responsibility and dependency boundaries,
 
 ## Current Domain API
 
-Circuit-domain models are available through `qubitlens.domain`:
+Circuit, gate-catalogue, and initial-state models are available through `qubitlens.domain`:
 
 ```python
-from qubitlens.domain import Circuit, GateOperation, Measurement
+from qubitlens.domain import (
+    STANDARD_GATES,
+    Circuit,
+    GateDefinition,
+    GateOperation,
+    InitialState,
+    Measurement,
+    get_gate,
+    validate_gate_operation,
+)
 ```
 
 For example:
 
 ```python
-from qubitlens.domain import Circuit, GateOperation, Measurement
+from qubitlens.domain import Circuit, GateOperation, InitialState, Measurement
 
 circuit = Circuit(
     num_qubits=2,
@@ -70,10 +81,13 @@ circuit = Circuit(
         GateOperation(gate="cx", targets=(1,), controls=(0,)),
         Measurement(qubit=1, classical_bit=0),
     ),
+    initial_state=InitialState.zero(2),
 )
 ```
 
-The domain model describes circuit structure but does not execute the circuit. Execution remains the responsibility of the Qiskit integration boundary.
+If no initial state is supplied, `Circuit` uses the all-zero computational basis state for its qubit count. Custom normalized pure statevectors and computational-basis states can be supplied through `InitialState`.
+
+The domain model describes circuit configuration but does not execute the circuit. Execution remains the responsibility of the Qiskit integration boundary.
 
 ## Development
 
@@ -115,7 +129,7 @@ Project architecture and development decisions are documented under `docs/`.
 
 * `docs/architecture.md` describes the current QubitLens architecture and responsibility boundaries.
 * `docs/phase-0-foundation.md` records the completed Phase 0 foundation.
-* `docs/phase-1-quantum-domain-foundation.md` records the ongoing Phase 1 quantum-domain work.
+* `docs/phase-1-quantum-domain-foundation.md` records the completed Phase 1 quantum-domain foundation.
 
 ## License
 

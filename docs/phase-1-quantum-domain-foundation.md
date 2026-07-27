@@ -1,7 +1,7 @@
 # QubitLens Phase 1: Quantum Domain Foundation
 
 **Author:** Vedank Srivastava
-**Status:** In Progress
+**Status:** Complete
 
 ## Objective
 
@@ -13,7 +13,7 @@ Phase 1 is divided into three parts:
 
 * **1.1 Circuit Domain Model** establishes the representation of circuits, gate applications, and measurements.
 * **1.2 Gate Catalogue** defines the supported gates and the metadata needed to describe their structural requirements.
-* **1.3 Initial-State Model** will establish how configurable initial quantum states are represented before circuit execution begins.
+* **1.3 Initial-State Model** establishes how configurable initial quantum states are represented and associated with circuits before execution begins.
 
 Together, these components form the quantum-domain vocabulary that later QubitLens features can build on.
 
@@ -246,7 +246,6 @@ The model is immutable, validates its gate-independent structural invariants, pr
 
 It deliberately does not execute circuits or define the semantics of individual gates. Those responsibilities remain separated: Qiskit continues to handle quantum execution, while gate-specific definitions and metadata are the responsibility of Phase 1.2.
 
-With the circuit structure established, the next checkpoint is **1.2 Gate Catalogue**.
 
 ## 1.2 Gate Catalogue
 
@@ -566,4 +565,276 @@ The circuit model remains independent of the current catalogue, and Qiskit remai
 
 The catalogue also remains independent of Phase 2 mathematical-input concerns: it records how many parameters a gate requires without deciding how mathematical expressions, variables, or scientific input are represented.
 
-With circuit structure and gate definitions established, the next checkpoint is **1.3 Initial-State Model**.
+With circuit structure and gate definitions established, the final Phase 1 checkpoint is **1.3 Initial-State Model**.
+
+## 1.3 Initial-State Model
+
+### Goal
+
+Phase 1.1 established how circuits and their ordered operations are represented, while Phase 1.2 established the supported gate catalogue and gate-specific structural requirements.
+
+The goal of Phase 1.3 is to establish how the quantum state that exists before circuit execution begins is represented within the QubitLens domain.
+
+The initial-state model remains a representation rather than an execution mechanism. It describes the state from which execution begins, while Qiskit remains responsible for evolving that state through the circuit.
+
+### Initial-State Representation
+
+An initial quantum state is represented by the immutable `InitialState` domain model.
+
+`InitialState` stores the complete pure statevector as a tuple of complex amplitudes:
+
+```python
+InitialState(
+    amplitudes=(
+        1 + 0j,
+        0j,
+    )
+)
+```
+
+The complete statevector is stored rather than separate per-qubit states.
+
+This is important because a general multi-qubit pure state cannot always be decomposed into independent states for each qubit. Representing the complete statevector allows the domain model to describe superposition and entangled initial states without introducing a second representation later.
+
+For example, a two-qubit Bell state can be represented directly:
+
+```python
+import math
+
+from qubitlens.domain import InitialState
+
+amplitude = 1 / math.sqrt(2)
+
+state = InitialState(
+    amplitudes=(
+        amplitude + 0j,
+        0j,
+        0j,
+        amplitude + 0j,
+    )
+)
+```
+
+### Statevector Validation
+
+`InitialState` validates the mathematical invariants required by the domain representation.
+
+A valid statevector must:
+
+* contain at least two amplitudes
+* have a dimension that is a power of two
+* contain only finite real and imaginary components
+* be normalized to unit length
+
+For a statevector with amplitudes \(\alpha_i\), normalization requires:
+
+\[
+\sum_i |\alpha_i|^2 = 1
+\]
+
+Floating-point comparison is used when validating normalization rather than requiring exact equality.
+
+The number of qubits is derived from the statevector dimension rather than stored separately. For a valid statevector of dimension \(2^n\), `num_qubits` returns \(n\).
+
+This prevents the state from carrying duplicated dimensional information that could become inconsistent.
+
+### Computational-Basis Constructors
+
+`InitialState` provides convenience constructors for common computational-basis states.
+
+The all-zero state can be created with:
+
+```python
+from qubitlens.domain import InitialState
+
+state = InitialState.zero(3)
+```
+
+which represents:
+
+```text
+|000⟩
+```
+
+A particular computational-basis state can be created with:
+
+```python
+state = InitialState.basis(3, 5)
+```
+
+which represents basis index 5:
+
+```text
+|101⟩
+```
+
+The basis-state constructor validates that at least one qubit is requested and that the basis index lies within the corresponding statevector.
+
+`zero()` delegates to the general computational-basis constructor with basis index 0, keeping computational-basis construction on a single implementation path.
+
+### Circuit Integration
+
+`Circuit` now supports an initial state in addition to its qubit count and ordered operations.
+
+A circuit can be constructed without explicitly providing one:
+
+```python
+from qubitlens.domain import Circuit
+
+circuit = Circuit(num_qubits=3)
+```
+
+In this case, the circuit canonicalizes the omitted initial state to:
+
+```text
+|000⟩
+```
+
+through `InitialState.zero(3)`.
+
+This preserves the conventional all-zero starting state and keeps the existing circuit-construction API convenient.
+
+A custom state can also be supplied explicitly:
+
+```python
+from qubitlens.domain import Circuit, InitialState
+
+circuit = Circuit(
+    num_qubits=3,
+    initial_state=InitialState.basis(3, 5),
+)
+```
+
+The initial state must describe the same number of qubits as the circuit.
+
+For example, a three-qubit circuit cannot be constructed with a two-qubit initial state.
+
+This compatibility check belongs to `Circuit` because it depends on the relationship between two otherwise valid domain objects.
+
+### Default-State Canonicalization
+
+The constructor accepts `None` as the default value for `initial_state`, but a missing state is resolved during circuit construction to the corresponding all-zero `InitialState`.
+
+This means the domain establishes one canonical representation for the actual starting state rather than requiring later execution or analysis code to independently decide what an omitted initial state means.
+
+Because `Circuit` is a frozen dataclass, the default state is assigned during `__post_init__` using the construction-time mechanism needed to establish the validated immutable object.
+
+### Immutability
+
+`InitialState` is a frozen dataclass and stores its amplitudes as a tuple.
+
+Using an immutable Python collection is intentional. A frozen dataclass containing a mutable numerical array would still allow the array contents to change even if the field itself could not be reassigned.
+
+The tuple representation keeps the initial-state value stable after construction and matches the immutable domain-model approach established by the circuit and gate representations.
+
+### Public Domain API
+
+`InitialState` is exposed through `qubitlens.domain`.
+
+The Phase 1 public domain API now includes:
+
+```python
+from qubitlens.domain import (
+    STANDARD_GATES,
+    Circuit,
+    GateDefinition,
+    GateOperation,
+    InitialState,
+    Measurement,
+    get_gate,
+    validate_gate_operation,
+)
+```
+
+Consumers therefore do not need to depend on the internal module location of the initial-state implementation.
+
+### Python Concepts Used
+
+Phase 1.3 uses several Python features and patterns that support the domain design.
+
+Frozen dataclasses continue to provide immutable value-like domain objects.
+
+Complex amplitudes use Python's built-in `complex` type, keeping the domain representation independent of a numerical-array implementation.
+
+Tuple storage provides an immutable statevector representation.
+
+Bitwise power-of-two checks validate that a statevector dimension can represent an integer number of qubits.
+
+`int.bit_length()` derives the qubit count from an already validated power-of-two dimension without requiring floating-point logarithms.
+
+Generator expressions and `any()` validate finite amplitude components, while `sum()` computes the squared statevector norm.
+
+`math.isfinite()` rejects non-finite real or imaginary components, and `math.isclose()` provides floating-point-aware normalization validation.
+
+Class methods provide semantic constructors for all-zero and arbitrary computational-basis states.
+
+### Testing
+
+Phase 1.3 adds dedicated initial-state coverage under:
+
+```text
+tests/domain/test_initial_state.py
+```
+
+The tests cover:
+
+* valid normalized one-qubit states
+* complex superpositions
+* multi-qubit entangled statevectors
+* empty and zero-qubit statevectors
+* non-power-of-two dimensions
+* non-finite real and imaginary amplitude components
+* non-normalized statevectors
+* derived qubit counts
+* all-zero computational-basis construction
+* arbitrary computational-basis construction
+* invalid qubit counts
+* out-of-range basis indices
+* default circuit initial states
+* explicit matching circuit initial states
+* circuit/state qubit-count mismatches
+* preservation of the existing positional circuit-construction API
+
+The complete domain suite contains 88 passing tests after Phase 1.3.
+
+### Quality Verification
+
+Phase 1.3 was checked using the project quality gate established during Phase 0 and continued throughout Phase 1.
+
+The final local verification produced:
+
+```text
+domain test suite:      88 passed
+full test suite:       128 passed
+Qiskit integration:      5 passed
+Ruff linting:            passed
+Ruff formatting:         passed
+mypy source checking:    passed
+```
+
+Ruff reports the project clean and all 25 Python files checked by the formatter are formatted.
+
+mypy successfully checks all 11 source files.
+
+The five Qiskit integration tests continue to pass independently, confirming that introducing configurable initial states did not regress the Qiskit execution-boundary behavior established during Phase 0.
+
+### 1.3 Result
+
+Phase 1.3 establishes configurable initial quantum states as part of the QubitLens domain.
+
+QubitLens can now:
+
+* represent immutable normalized pure statevectors
+* represent real and complex amplitudes
+* represent arbitrary multi-qubit pure states, including entangled states
+* derive the number of qubits from statevector dimension
+* construct all-zero initial states
+* construct arbitrary computational-basis states
+* associate explicit initial states with circuits
+* provide the conventional all-zero state when no custom state is supplied
+* validate compatibility between circuit width and initial-state width
+* expose initial-state construction through the public `qubitlens.domain` API
+
+Together, Phases 1.1, 1.2, and 1.3 establish the complete Phase 1 quantum-domain foundation: circuit structure, supported gate definitions, and configurable starting states.
+
+Quantum execution remains behind the Qiskit boundary. The domain describes what a circuit contains and where it begins without becoming a second simulator.

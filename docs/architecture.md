@@ -54,16 +54,21 @@ The domain API currently exposes:
 * `Circuit`
 * `GateOperation`
 * `Measurement`
+* `InitialState`
 * `GateDefinition`
 * `STANDARD_GATES`
 * `get_gate`
 * `validate_gate_operation`
 
-A `Circuit` describes the number of qubits in a circuit and preserves its ordered operations.
+A `Circuit` describes the number of qubits in a circuit, its initial quantum state, and its ordered operations.
 
 A `GateOperation` describes the placement and configuration of a gate application through its gate identifier, targets, controls, and parameters.
 
 A `Measurement` describes the measurement of a qubit into a classical bit.
+
+An `InitialState` represents the complete normalized pure statevector from which circuit execution begins. The full statevector representation supports computational-basis states, superpositions, and entangled multi-qubit states while keeping the domain independent of execution behavior.
+
+When no custom initial state is supplied, `Circuit` canonicalizes the starting state to the all-zero computational basis state for its qubit count. An explicitly supplied initial state must represent the same number of qubits as the circuit.
 
 A `GateDefinition` describes the structural metadata of a gate supported by QubitLens, including its canonical identifier, display name, and required target, control, and parameter counts.
 
@@ -112,6 +117,7 @@ QubitLens owns the internal domain representation used by its analysis-oriented 
 
 ```text
 Circuit
+├── initial state
 └── ordered operations
     ├── GateOperation
     └── Measurement
@@ -157,6 +163,9 @@ Examples include:
 * duplicate target or control qubits
 * target/control overlap
 * negative measurement indices
+* invalid initial-state dimensions
+* non-finite statevector amplitudes
+* non-normalized statevectors
 
 These checks belong to the operation objects because no external context is required to determine that the configuration is invalid.
 
@@ -167,6 +176,8 @@ A `Circuit` validates properties that depend on its own configuration.
 For example, an operation referencing qubit 4 may be valid in a five-qubit circuit and invalid in a two-qubit circuit.
 
 The circuit therefore verifies that target, control, and measured qubits fall within its qubit register.
+
+The circuit also verifies that an explicitly supplied initial state represents the same number of qubits as the circuit. This is circuit-relative validation because both the `InitialState` and the `Circuit` may be individually valid while their dimensions are incompatible with each other.
 
 ### Gate-Specific Validation
 
