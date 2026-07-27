@@ -12,7 +12,7 @@ The goal is not to turn QubitLens into a separate quantum execution engine. Qisk
 Phase 1 is divided into three parts:
 
 * **1.1 Circuit Domain Model** establishes the representation of circuits, gate applications, and measurements.
-* **1.2 Gate Catalogue** will define the supported gates and the metadata needed to describe their behavior and requirements.
+* **1.2 Gate Catalogue** defines the supported gates and the metadata needed to describe their structural requirements.
 * **1.3 Initial-State Model** will establish how configurable initial quantum states are represented before circuit execution begins.
 
 Together, these components form the quantum-domain vocabulary that later QubitLens features can build on.
@@ -123,7 +123,7 @@ The circuit model does not currently decide that:
 * a Hadamard gate requires exactly one target
 * a controlled-X gate requires a particular combination of controls and targets
 * a SWAP operation requires two targets
-* a rotation gate requires a particular number of parameters
+* a parameterized gate requires a particular number of parameters
 
 Those rules require knowledge about individual gates and therefore belong to the Phase 1.2 gate catalogue.
 
@@ -247,3 +247,323 @@ The model is immutable, validates its gate-independent structural invariants, pr
 It deliberately does not execute circuits or define the semantics of individual gates. Those responsibilities remain separated: Qiskit continues to handle quantum execution, while gate-specific definitions and metadata are the responsibility of Phase 1.2.
 
 With the circuit structure established, the next checkpoint is **1.2 Gate Catalogue**.
+
+## 1.2 Gate Catalogue
+
+### Goal
+
+Phase 1.1 established how gate applications are represented inside a circuit, but it deliberately left the meaning and structural requirements of individual gates undefined.
+
+The goal of Phase 1.2 is to establish the QubitLens gate catalogue: a consistent domain representation of the gates currently supported by QubitLens and the metadata required to validate their use.
+
+The catalogue remains separate from quantum execution. It describes supported gates and their structural requirements, while Qiskit remains responsible for executing their quantum behavior.
+
+### Gate Definitions
+
+A supported gate is represented by the immutable `GateDefinition` domain model.
+
+Each definition stores:
+
+* a canonical gate name
+* a display name
+* the required number of target qubits
+* the required number of control qubits
+* the required number of parameters
+
+Gate definitions validate their own intrinsic metadata. Names and display names cannot be empty, every gate requires at least one target, and control and parameter counts cannot be negative.
+
+The definitions are immutable so gate metadata can be shared safely across later circuit, analysis, visualization, and execution-boundary code.
+
+### Standard Gate Catalogue
+
+The current catalogue contains 17 supported gate definitions:
+
+* `I`
+* `X`
+* `Y`
+* `Z`
+* `H`
+* `S`
+* `S†`
+* `T`
+* `T†`
+* `P`
+* `CX`
+* `CY`
+* `CZ`
+* `CCX`
+* `CCZ`
+* `SWAP`
+* `CSWAP`
+
+Canonical identifiers use lowercase names such as `"h"`, `"cx"`, and `"cswap"`, while display names remain presentation-oriented.
+
+The catalogue is intentionally limited to the gates currently supported by QubitLens. Its representation allows additional gate definitions to be introduced later without changing the circuit-domain representation established in Phase 1.1.
+
+Measurement is not part of the gate catalogue. It remains represented separately by the `Measurement` domain model because measurement is not an ordinary unitary gate application and includes a classical-bit destination.
+
+### Catalogue Metadata
+
+The catalogue captures structural gate requirements rather than gate matrices or execution implementations.
+
+Examples include:
+
+```text
+H
+targets:     1
+controls:    0
+parameters:  0
+
+P
+targets:     1
+controls:    0
+parameters:  1
+
+CX
+targets:     1
+controls:    1
+parameters:  0
+
+CCX
+targets:     1
+controls:    2
+parameters:  0
+
+SWAP
+targets:     2
+controls:    0
+parameters:  0
+
+CSWAP
+targets:     2
+controls:    1
+parameters:  0
+```
+
+This keeps the catalogue concerned with QubitLens domain semantics rather than duplicating the mathematical gate primitives in `qubitlens.core` or the execution behavior provided by Qiskit.
+
+### Catalogue Lookup
+
+Supported gate definitions can be retrieved by canonical identifier through `get_gate()`.
+
+The catalogue tuple remains the source of gate definitions, while an internal name-to-definition mapping provides efficient lookup without requiring callers to depend on the catalogue's storage details.
+
+Lookup is exact and does not normalize aliases, whitespace, or capitalization.
+
+For example:
+
+```python
+get_gate("cx")
+```
+
+retrieves the supported controlled-X definition, while identifiers such as `"CX"`, `" cx "`, or an unsupported gate name are rejected rather than silently transformed.
+
+This gives QubitLens stable canonical identifiers without coupling callers to the catalogue's internal representation.
+
+### Gate-Specific Validation
+
+Phase 1.2 implements the gate-specific validation boundary reserved during Phase 1.1.
+
+`validate_gate_operation()` validates a `GateOperation` against its corresponding `GateDefinition`.
+
+The validator checks:
+
+* whether the gate is supported
+* target count
+* control count
+* parameter count
+
+For example, the catalogue can distinguish between the structural requirements of:
+
+```text
+H       → one target
+CX      → one control and one target
+CCX     → two controls and one target
+SWAP    → two targets
+CSWAP   → one control and two targets
+P       → one target and one parameter
+```
+
+This validation remains separate from `GateOperation` itself.
+
+`GateOperation` continues to represent structurally valid gate applications without being permanently restricted to the current catalogue. Catalogue-aware code can explicitly validate whether an operation satisfies the requirements of a gate currently supported by QubitLens.
+
+This preserves three distinct validation responsibilities:
+
+```text
+GateOperation
+    ↓
+intrinsic structural validity
+
+Gate catalogue
+    ↓
+supported-gate and gate-specific validity
+
+Circuit
+    ↓
+circuit-relative qubit validity
+```
+
+Parameter values are not interpreted by the gate catalogue. Phase 1.2 validates parameter count only. Mathematical expression parsing, variables, and scientific input belong to Phase 2.
+
+### Relationship to Core Gates
+
+The Phase 0 `qubitlens.core` gate primitives and the Phase 1.2 domain catalogue have different responsibilities.
+
+The core gate module represents mathematical gate behavior through matrices and other reusable mathematical foundations.
+
+The domain gate catalogue represents which gates QubitLens currently supports and the structural metadata needed to describe and validate their use in circuit operations.
+
+The domain catalogue does not import gate matrices from `core`, and it does not implement quantum execution.
+
+This keeps the architectural distinction explicit:
+
+```text
+core.gates
+    ↓
+mathematical gate behavior
+
+domain.gates
+    ↓
+gate definitions and domain requirements
+
+Qiskit
+    ↓
+quantum execution
+```
+
+### Measurement Boundary
+
+Measurement remains outside the gate catalogue.
+
+Although measurement is an operation that can appear in a circuit, it is represented by the dedicated `Measurement` domain model introduced in Phase 1.1.
+
+This avoids treating a non-unitary operation with a classical destination as though it were an ordinary quantum gate and preserves the type-level distinction already established by the circuit domain model.
+
+### Public Domain API
+
+The Phase 1.2 gate catalogue extends the existing `qubitlens.domain` public API.
+
+The domain package now exposes:
+
+```python
+from qubitlens.domain import (
+    STANDARD_GATES,
+    Circuit,
+    GateDefinition,
+    GateOperation,
+    Measurement,
+    get_gate,
+    validate_gate_operation,
+)
+```
+
+`GateDefinition` provides the gate metadata representation.
+
+`STANDARD_GATES` provides the current supported catalogue.
+
+`get_gate()` provides canonical lookup.
+
+`validate_gate_operation()` provides explicit catalogue-aware validation.
+
+The internal name-to-definition lookup mapping remains private.
+
+This keeps consumers dependent on the stable domain package boundary rather than the internal organization of the catalogue implementation.
+
+### Python Concepts Used
+
+Phase 1.2 extends the domain layer using several Python features and patterns.
+
+Frozen dataclasses continue to provide immutable domain representations.
+
+A tuple of `GateDefinition` objects provides a deterministic immutable catalogue collection.
+
+A dictionary comprehension derives the internal canonical-name lookup mapping from the catalogue, keeping the tuple as the single source of gate definitions rather than manually maintaining duplicate collections.
+
+Dictionary lookup provides direct retrieval by canonical identifier.
+
+Exception translation converts an internal missing-key condition into a domain-facing `ValueError` for unsupported gates without exposing the catalogue's internal dictionary behavior.
+
+Parameterized pytest tests allow related gate families and validation cases to share a single test contract while still producing independent test cases.
+
+### Testing
+
+The gate catalogue has dedicated coverage under:
+
+```text
+tests/domain/
+```
+
+The Phase 1.2 tests cover:
+
+* gate-definition construction and defaults
+* empty and whitespace-only gate names
+* empty and whitespace-only display names
+* invalid target counts
+* invalid control counts
+* invalid parameter counts
+* gate-definition immutability
+* the exact supported catalogue inventory
+* uniqueness of canonical gate identifiers
+* parameterized gate metadata
+* controlled single-target gate metadata
+* doubly controlled gate metadata
+* multi-target gate metadata
+* controlled multi-target gate metadata
+* canonical gate lookup
+* identity of retrieved catalogue definitions
+* rejection of unsupported and noncanonical identifiers
+* valid catalogue-aware gate operations
+* unsupported gates during catalogue-aware validation
+* invalid target counts during catalogue-aware validation
+* invalid control counts during catalogue-aware validation
+* invalid parameter counts during catalogue-aware validation
+* public exposure of the gate catalogue and validation API
+* regression coverage for the Phase 1.1 public circuit-domain API
+
+The complete domain suite currently contains 61 passing tests, covering both the Phase 1.1 circuit-domain model and the Phase 1.2 gate catalogue.
+
+### Quality Verification
+
+Phase 1.2 was checked using the project quality gate established during Phase 0 and continued throughout Phase 1.
+
+The final local verification produced:
+
+```text
+full test suite:        101 passed
+Qiskit integration:      5 passed
+Ruff linting:            passed
+Ruff formatting:         passed
+mypy source checking:    passed
+git diff check:           passed
+```
+
+The full test suite includes the existing core, circuit-domain, Qiskit integration, and package tests together with the new gate catalogue, catalogue-aware validation, and public domain API coverage.
+
+The five Qiskit integration tests continue to pass independently, confirming that the Phase 1.2 domain changes did not regress the execution-boundary assumptions established during Phase 0.
+
+Ruff reports the complete project clean, all 23 tracked Python files checked by the formatter are already formatted, and mypy successfully checks all 10 source files.
+
+Clean-environment verification through GitHub Actions remains part of the Git checkpoint and will be confirmed after the Phase 1.2 commit is pushed.
+
+
+### 1.2 Result
+
+Phase 1.2 establishes the gate catalogue and the gate-specific semantic validation boundary for the QubitLens domain.
+
+QubitLens can now:
+
+* represent immutable gate definitions
+* enumerate the current supported gate catalogue
+* retrieve gate definitions through canonical identifiers
+* distinguish presentation names from stable internal identifiers
+* describe target, control, and parameter requirements
+* validate gate operations against supported gate definitions
+* keep gate-specific semantics separate from the generic circuit representation
+* expose the catalogue through the public `qubitlens.domain` API
+
+The circuit model remains independent of the current catalogue, and Qiskit remains responsible for quantum execution.
+
+The catalogue also remains independent of Phase 2 mathematical-input concerns: it records how many parameters a gate requires without deciding how mathematical expressions, variables, or scientific input are represented.
+
+With circuit structure and gate definitions established, the next checkpoint is **1.3 Initial-State Model**.

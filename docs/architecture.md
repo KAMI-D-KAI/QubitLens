@@ -47,13 +47,17 @@ Keeping these responsibilities separate allows the mathematical foundation to re
 
 ### Domain
 
-`qubitlens.domain` contains QubitLens's internal quantum-domain representations.
+`qubitlens.domain` contains QubitLens's internal quantum-domain representations and gate-catalogue capabilities.
 
-The circuit-domain API currently exposes:
+The domain API currently exposes:
 
 * `Circuit`
 * `GateOperation`
 * `Measurement`
+* `GateDefinition`
+* `STANDARD_GATES`
+* `get_gate`
+* `validate_gate_operation`
 
 A `Circuit` describes the number of qubits in a circuit and preserves its ordered operations.
 
@@ -61,9 +65,18 @@ A `GateOperation` describes the placement and configuration of a gate applicatio
 
 A `Measurement` describes the measurement of a qubit into a classical bit.
 
-These objects represent circuit structure. They do not execute the operations they describe.
+A `GateDefinition` describes the structural metadata of a gate supported by QubitLens, including its canonical identifier, display name, and required target, control, and parameter counts.
 
-The domain models are immutable and validate gate-independent structural invariants. Validation that depends on the meaning of a particular gate belongs to the gate catalogue rather than the circuit representation itself.
+`STANDARD_GATES` provides the current supported gate definitions, while `get_gate()` provides lookup through exact canonical identifiers.
+
+`validate_gate_operation()` applies catalogue-defined structural requirements to a gate operation, including supported-gate, target-count, control-count, and parameter-count validation.
+
+These objects and services represent quantum-domain structure and requirements. They do not execute the operations they describe.
+
+The circuit models remain responsible for gate-independent structural invariants and circuit-relative validation. Gate-specific requirements remain separate from the generic circuit representation and are enforced explicitly through catalogue-aware validation.
+
+This separation allows the circuit representation to remain structurally generic while supported gate semantics can evolve through the catalogue without coupling circuit structure to a fixed set of gates.
+
 
 ### Analysis
 
@@ -159,16 +172,39 @@ The circuit therefore verifies that target, control, and measured qubits fall wi
 
 Rules that depend on the meaning of a particular gate are kept outside the generic circuit model.
 
-Examples include:
+`GateDefinition` represents the structural requirements of a supported gate, including:
 
 * required target count
 * required control count
 * required parameter count
-* gate-specific metadata
+* canonical and display identifiers
 
-These responsibilities belong to the gate catalogue rather than `Circuit` or `GateOperation`.
+`validate_gate_operation()` applies those requirements to a `GateOperation`.
 
-This keeps circuit structure independent from the definitions of the gates placed within it.
+The validator determines whether the operation refers to a currently supported gate and whether its numbers of targets, controls, and parameters match the corresponding gate definition.
+
+This validation is explicit rather than built into `GateOperation`. The circuit representation can therefore remain structurally generic instead of being permanently restricted to the current supported gate catalogue.
+
+Validation responsibility is divided into three layers:
+
+```text
+GateOperation
+    ↓
+intrinsic structural validity
+
+Gate catalogue
+    ↓
+supported-gate and gate-specific validity
+
+Circuit
+    ↓
+circuit-relative qubit validity
+```
+
+The catalogue does not execute gates or interpret parameter values. Quantum execution remains behind the Qiskit boundary, while mathematical expression parsing, variables, and scientific input belong to the later mathematical input system.
+
+This keeps gate definitions, circuit representation, mathematical input, and quantum execution as separate architectural responsibilities.
+
 
 ## Qubit Ordering
 
