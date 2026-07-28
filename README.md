@@ -1,136 +1,124 @@
 # QubitLens
 
-QubitLens is an interactive quantum circuit analysis, explanation, and visualization tool built on top of Qiskit.
+> **See the math inside a quantum circuit.**
+> Build a circuit → run it → watch it evolve → stop anywhere → inspect the state → understand the math → verify it → export/share it.
 
-The project aims to make quantum circuits easier to inspect and understand by exposing how a circuit evolves step by step and turning execution data into structured analysis that can power explanations, visualizations, exports, and interactive learning tools.
+QubitLens is an interactive quantum circuit builder and state-evolution explorer. Qiskit is the quantum engine underneath; QubitLens is the representation, analysis, explanation, visualization, and UX layer on top — designed to make the mathematics of a circuit understandable **gate by gate**.
 
-QubitLens does not aim to replace Qiskit or implement a separate quantum simulator. It provides its own analysis-oriented domain and mathematical foundations while relying on Qiskit for mature quantum execution.
+---
 
-## Project Status
+## Roadmap
 
-QubitLens is currently in early development.
+A checked box means the capability lives in the current codebase and is covered by tests.
 
-The Phase 0 foundation is complete. It established the package architecture, mathematical quantum core, Qiskit execution boundary, testing strategy, development quality tooling, and continuous integration.
+### Foundation
+- [x] Installable Python package with a clean `src/` layout
+- [x] Immutable numerical quantum core (statevectors, gate matrices, operator construction)
+- [x] Explicit little-endian, Qiskit-compatible qubit ordering
+- [x] Qiskit set up as the reference execution engine
+- [x] CI on Python 3.11 (dev) and 3.12, with Ruff, mypy, and pytest gates
+- [x] Reserved architectural boundaries for analysis and explanation
 
-The Phase 1 quantum-domain foundation is complete. QubitLens now has its own immutable representations for circuit structure, supported gate definitions, and configurable initial quantum states while keeping quantum execution behind the Qiskit boundary.
+### Quantum domain
+- [x] Immutable circuit, operation, and initial-state model
+- [x] Gate catalogue with display metadata and catalogue-aware validation
+- [x] Configurable pure initial states with complex amplitudes
+- [x] Default `|0…0⟩` initialisation and full structural validation
 
-The current domain layer provides:
+### Mathematical input *(current work)*
+- [ ] Safe expression engine — parse and evaluate real/complex maths with **no** arbitrary code execution
+- [ ] Named parameter variables (`theta`, `phi`, …) with safe binding at evaluation time
+- [ ] Scientific state input — from full vectors, basis-state dicts, or sparse dicts, with symbolic amplitudes
 
-* quantum circuits and their ordered operations
-* gate applications with targets, controls, and parameters
-* measurements from qubits into classical bits
-* a supported gate catalogue with structural gate metadata
-* catalogue-aware gate-operation validation
-* normalized pure initial-state representations
-* all-zero and arbitrary computational-basis initial states
-* configurable circuit initial states with circuit/state dimension validation
+### Execution & tracing
+- [ ] Qiskit-backed statevector execution with explicit little-endian semantics
+- [ ] Operation-by-operation state evolution: `|ψ₀⟩ → |ψ₁⟩ → |ψ₂⟩ → …` as first-class checkpoints
 
-## Architecture
+### Visual experience
+- [ ] Web-based circuit builder (React + FastAPI adapter) — 1–10 qubits, drag-and-drop gates, controls/targets, parameter form, measurements
+- [ ] Playable simulation: play/pause/step, clickable checkpoints, adjustable speed, active-gate highlighting
+- [ ] Structured, depth-adjustable explanations for every gate step
 
-QubitLens separates the major responsibilities involved in understanding a quantum circuit:
+### Analysis, measurement, export
+- [ ] Measurement lab: analytic probabilities, seeded shot sampling, side-by-side comparison
+- [ ] Circuit and state analysis: depth, entropy, entanglement entropy, entangling-step locator
+- [ ] Export to runnable Qiskit Python, PNG/SVG diagrams, or ASCII
+- [ ] Export animated walk-throughs of any circuit (GIF / MP4)
 
-* **Core** provides shared mathematical and quantum foundations.
-* **Domain** represents QubitLens concepts such as circuits, gate applications, measurements, supported gate definitions, and initial quantum states.
-* **Qiskit** provides quantum execution and state evolution.
-* **Analysis** will convert circuit execution into structured information about what happens at each step.
-* **Explanation** will convert structured analysis into human-readable insights.
-* **Visualization and export** will consume the same underlying domain and analysis information for interactive and shareable outputs.
+### Polish & ship
+- [ ] Keyboard-navigable, screen-reader-labeled, color-blind-safe UI with hard/soft qubit budgets
+- [ ] Package release, live-hosted demo, and public documentation
 
-The intended flow is:
+---
 
-```text
-QubitLens domain
-      ↓
-Qiskit execution
-      ↓
-QubitLens analysis
-      ↓
-explanation / visualization / export
+## Where we are right now
+
+The **quantum foundation** and **quantum domain** are complete and locked down by 128 passing tests. Active work is on the **mathematical input** system: turning human-typed maths into validated QubitLens values without ever running user code as Python.
+
+Once mathematical input closes, the next milestones are Qiskit-backed execution and the operation-by-operation trace engine — which together unlock the visual experience.
+
+---
+
+## Vision
+
+QubitLens should make the invisible mathematical process inside a quantum circuit **inspectable**. A user should be able to move from
+
+**circuit diagram → operation → state transformation → mathematical explanation → verification → export**
+
+without needing to reconstruct the computation manually or write a Qiskit program first. The finished product connects visual intuition, mathematical understanding, correct quantum execution, and reusable/shareable output in one coherent system.
+
+---
+
+## Architecture at a glance
+
+```
+Visual UI  ──┐
+             ├──►  Shared QubitLens application layers
+CLI       ──┘
+
+┌─────────────────────────────┐
+│ User interfaces             │
+├─────────────────────────────┤
+│ Mathematical input          │  ← safe expression engine, parameters, states
+├─────────────────────────────┤
+│ Circuit domain              │  ← immutable circuits, operations, initial states
+├─────────────────────────────┤
+│ Qiskit execution            │  ← statevector run, little-endian at the boundary
+├─────────────────────────────┤
+│ Trace engine                │  ← |ψ₀⟩ → |ψ₁⟩ → … checkpoints
+├─────────────────────────────┤
+│ Analysis · Explanation · Visualization │
+├─────────────────────────────┤
+│ Export & presentation       │  ← Qiskit source, diagrams, animations
+└─────────────────────────────┘
 ```
 
-This separation keeps QubitLens focused on inspection and understanding rather than duplicating the responsibilities of a quantum SDK.
+Qiskit is used as the execution and reference layer; QubitLens does not attempt to reimplement it. Everything the user sees — the builder, the checkpoints, the explanations, the exports — lives above Qiskit and passes through QubitLens's own semantic model.
 
-For a more detailed description of the responsibility and dependency boundaries, see `docs/architecture.md`.
-
-## Current Domain API
-
-Circuit, gate-catalogue, and initial-state models are available through `qubitlens.domain`:
-
-```python
-from qubitlens.domain import (
-    STANDARD_GATES,
-    Circuit,
-    GateDefinition,
-    GateOperation,
-    InitialState,
-    Measurement,
-    get_gate,
-    validate_gate_operation,
-)
-```
-
-For example:
-
-```python
-from qubitlens.domain import Circuit, GateOperation, InitialState, Measurement
-
-circuit = Circuit(
-    num_qubits=2,
-    operations=(
-        GateOperation(gate="h", targets=(0,)),
-        GateOperation(gate="cx", targets=(1,), controls=(0,)),
-        Measurement(qubit=1, classical_bit=0),
-    ),
-    initial_state=InitialState.zero(2),
-)
-```
-
-If no initial state is supplied, `Circuit` uses the all-zero computational basis state for its qubit count. Custom normalized pure statevectors and computational-basis states can be supplied through `InitialState`.
-
-The domain model describes circuit configuration but does not execute the circuit. Execution remains the responsibility of the Qiskit integration boundary.
+---
 
 ## Development
 
-QubitLens currently targets Python 3.11 and 3.12.
-
-Create and activate a virtual environment, then install the project in editable development mode:
-
 ```bash
-python -m venv .venv
-python -m pip install -e ".[dev]"
-```
+# create a venv, then:
+pip install -e ".[dev]"
 
-Run the full test suite:
-
-```bash
+# quality gate
+ruff check .
+ruff format --check .
+mypy
 pytest -q
-```
 
-Run only the Qiskit integration tests:
-
-```bash
+# Qiskit-touching integration tests
 pytest -m integration -q
 ```
 
-Run the local quality checks:
-
-```bash
-ruff check src tests
-ruff format --check src tests
-mypy src
-pytest -q
-```
-
-GitHub Actions runs the main quality pipeline on Python 3.11 and separately verifies runtime compatibility on Python 3.12.
-
 ## Documentation
 
-Project architecture and development decisions are documented under `docs/`.
-
-* `docs/architecture.md` describes the current QubitLens architecture and responsibility boundaries.
-* `docs/phase-0-foundation.md` records the completed Phase 0 foundation.
-* `docs/phase-1-quantum-domain-foundation.md` records the completed Phase 1 quantum-domain foundation.
+- [`docs/architecture.md`](docs/architecture.md) — layers, responsibilities, conventions
+- [`docs/journey.md`](docs/journey.md) — the engineering story behind each capability *(coming soon)*
+- [`docs/api.md`](docs/api.md) — public Python API reference *(coming soon)*
 
 ## License
 
-QubitLens is licensed under the MIT License.
+MIT — see [LICENSE](LICENSE).
