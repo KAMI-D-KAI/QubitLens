@@ -3,7 +3,7 @@
 > **See the math inside a quantum circuit.**
 > Build a circuit → run it → watch it evolve → stop anywhere → inspect the state → understand the math → verify it → export/share it.
 
-QubitLens is an interactive quantum circuit builder and state-evolution explorer. Qiskit is the quantum engine underneath; QubitLens is the representation, analysis, explanation, visualization, and UX layer on top — designed to make the mathematics of a circuit understandable **gate by gate**.
+QubitLens is an interactive quantum circuit builder and state-evolution explorer. Qiskit is the quantum engine underneath; QubitLens is the representation, analysis, explanation, visualization, and UX layer on top, designed to make the mathematics of a circuit understandable **gate by gate**.
 
 ---
 
@@ -55,7 +55,7 @@ A checked box means the capability lives in the current codebase and is covered 
 
 The **quantum foundation** and **quantum domain** are complete and locked down by 128 passing tests. Active work is on the **mathematical input** system: turning human-typed maths into validated QubitLens values without ever running user code as Python.
 
-Once mathematical input closes, the next milestones are Qiskit-backed execution and the operation-by-operation trace engine — which together unlock the visual experience.
+Once mathematical input closes, the next milestones are Qiskit-backed execution and the operation-by-operation trace engine, which together unlock the visual experience.
 
 ---
 
@@ -93,7 +93,7 @@ CLI       ──┘
 └─────────────────────────────┘
 ```
 
-Qiskit is used as the execution and reference layer; QubitLens does not attempt to reimplement it. Everything the user sees — the builder, the checkpoints, the explanations, the exports — lives above Qiskit and passes through QubitLens's own semantic model.
+Qiskit is used as the execution and reference layer; QubitLens does not attempt to reimplement it. Everything the user sees. the builder, the checkpoints, the explanations, the exports — lives above Qiskit and passes through QubitLens's own semantic model.
 
 ---
 
