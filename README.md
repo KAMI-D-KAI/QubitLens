@@ -26,16 +26,16 @@ A checked box means the capability lives in the current codebase and is covered 
 - [x] Default `|0…0⟩` initialisation and full structural validation
 
 ### Mathematical input *(current work)*
-- [ ] Safe expression engine — parse and evaluate real/complex maths with **no** arbitrary code execution
+- [x] Safe expression engine parse and evaluate real/complex maths with **no** arbitrary code execution
 - [ ] Named parameter variables (`theta`, `phi`, …) with safe binding at evaluation time
-- [ ] Scientific state input — from full vectors, basis-state dicts, or sparse dicts, with symbolic amplitudes
+- [ ] Scientific state input from full vectors, basis-state dicts, or sparse dicts, with symbolic amplitudes
 
 ### Execution & tracing
 - [ ] Qiskit-backed statevector execution with explicit little-endian semantics
 - [ ] Operation-by-operation state evolution: `|ψ₀⟩ → |ψ₁⟩ → |ψ₂⟩ → …` as first-class checkpoints
 
 ### Visual experience
-- [ ] Web-based circuit builder (React + FastAPI adapter) — 1–10 qubits, drag-and-drop gates, controls/targets, parameter form, measurements
+- [ ] Web-based circuit builder (React + FastAPI adapter) 1–10 qubits, drag-and-drop gates, controls/targets, parameter form, measurements
 - [ ] Playable simulation: play/pause/step, clickable checkpoints, adjustable speed, active-gate highlighting
 - [ ] Structured, depth-adjustable explanations for every gate step
 
