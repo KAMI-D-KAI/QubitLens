@@ -4,10 +4,10 @@
 
 Each section follows the same four-beat structure:
 
-- **Problem** — the concrete thing the project could not yet do.
-- **Concept** — the piece of physics, math, or engineering that had to be understood before writing a line of code.
-- **Design & implementation** — the shape of the solution, without turning into a code listing.
-- **Learning** — what the author will carry forward from this step.
+- **Problem**   the concrete thing the project could not yet do.
+- **Concept**   the piece of physics, math, or engineering that had to be understood before writing a line of code.
+- **Design & implementation**   the shape of the solution, without turning into a code listing.
+- **Learning**   what the author will carry forward from this step.
 
 ---
 
@@ -31,7 +31,7 @@ Before any pretty visualisation could exist, the project needed a numerical core
 - immutable, so nothing downstream could accidentally corrupt a state,
 - and Qiskit-compatible in its *conventions* (particularly qubit ordering) even before Qiskit was actually used as an engine.
 
-### Concept — the two conventions that trip everyone up
+### Concept the two conventions that trip everyone up
 
 Two things about representing qubits are worth internalising before writing code:
 
@@ -64,23 +64,23 @@ I also learned that establishing quality tooling (Ruff/mypy/CI) at the start fee
 
 ### Problem
 
-Once the numerical core existed, I still couldn't say *"here is a circuit"* in the codebase. There was no notion of a gate operation with targets and controls, no notion of an initial state configurable to something other than `|0…0⟩`, and no way to validate — *before running anything* — that "apply CX to qubit 3 on a 2-qubit circuit" is nonsense.
+Once the numerical core existed, I still couldn't say *"here is a circuit"* in the codebase. There was no notion of a gate operation with targets and controls, no notion of an initial state configurable to something other than `|0…0⟩`, and no way to validate *before running anything*  that "apply CX to qubit 3 on a 2-qubit circuit" is nonsense.
 
 Every subsequent layer (execution, tracing, explanation, visualisation) needs to consume validated, self-describing circuit objects. Building those objects properly here saves that layer from re-implementing validation.
 
-### Concept — a circuit as ordered semantics, not as a matrix
+### Concept a circuit as ordered semantics, not as a matrix
 
 There's a temptation to think of a circuit as *"the big unitary you get by multiplying all its gates in the right order"*. Mathematically true; operationally useless. If you flatten a circuit into a matrix, you throw away the very thing QubitLens exists to expose: **the intermediate states**. A checkpoint like `|ψ₂⟩` doesn't exist inside a monolithic matrix; it only exists if the circuit is stored as an ordered sequence of operations.
 
-So the domain model treats a `Circuit` as *"a qubit count plus an ordered tuple of `Operation`s"*, and treats an `Operation` as *"a gate name plus its targets, controls, and parameters"*. Nothing more. No matrices, no statevectors — those live in the numerical core.
+So the domain model treats a `Circuit` as *"a qubit count plus an ordered tuple of `Operation`s"*, and treats an `Operation` as *"a gate name plus its targets, controls, and parameters"*. Nothing more. No matrices, no statevectors those live in the numerical core.
 
 ### Design & implementation
 
 Two clean layers appeared:
 
-- **Circuit domain (`qubitlens.domain`)** — `Circuit`, `Operation`, `Measurement`, `InitialState`, all frozen dataclasses. A `Circuit` grows by returning a new `Circuit` from `.append_gate(...)` — never by mutation. Validation happens on construction: gate names must exist in the catalogue, qubit indices must be in range, parameter counts must match the catalogue's declaration.
-- **Gate catalogue** — a data-only registry of every supported gate with its display name, target/control/parameter counts. This is intentionally separate from the numerical matrices, because the *domain* only needs to know structural facts ("CX has one control and one target"), not the underlying matrix. The matrix lookup lives in the core.
-- **Initial state model** — `InitialState` wraps a complex amplitude vector. It validates length (`2ⁿ`), finiteness (no `NaN`/`inf`), and normalisation. `InitialState.zero(n)` is the convenience constructor for the canonical `|0…0⟩`. Every downstream layer that "needs a starting state" takes an `InitialState`; nothing takes a raw numpy array.
+- **Circuit domain (`qubitlens.domain`)**   `Circuit`, `Operation`, `Measurement`, `InitialState`, all frozen dataclasses. A `Circuit` grows by returning a new `Circuit` from `.append_gate(...)` never by mutation. Validation happens on construction: gate names must exist in the catalogue, qubit indices must be in range, parameter counts must match the catalogue's declaration.
+- **Gate catalogue** a data-only registry of every supported gate with its display name, target/control/parameter counts. This is intentionally separate from the numerical matrices, because the *domain* only needs to know structural facts ("CX has one control and one target"), not the underlying matrix. The matrix lookup lives in the core.
+- **Initial state model**  `InitialState` wraps a complex amplitude vector. It validates length (`2ⁿ`), finiteness (no `NaN`/`inf`), and normalisation. `InitialState.zero(n)` is the convenience constructor for the canonical `|0…0⟩`. Every downstream layer that "needs a starting state" takes an `InitialState`; nothing takes a raw numpy array.
 
 ### Learning
 
@@ -98,9 +98,9 @@ Quantum states and gate parameters are described mathematically: `1/sqrt(2)`, `e
 
 At the same time, the mathematical surface needed is genuinely non-trivial: complex numbers, transcendentals, parenthesised sub-expressions, negative exponents. So the answer can be neither "accept everything" nor "accept only a fixed list of literals".
 
-### Concept — Python's own AST as a security surface
+### Concept Python's own AST as a security surface
 
-Python provides `ast.parse(source, mode="eval")`, which returns a syntax tree of the expression **without executing it**. This is the leverage point. If I walk that tree and refuse any node type I did not explicitly bless, I can guarantee no name lookup, no attribute access, no function call, no comprehension, and no lambda ever runs — regardless of how devious the input is. Only after the tree is proven safe do I evaluate it, against a namespace containing exclusively the constants and functions I want to expose.
+Python provides `ast.parse(source, mode="eval")`, which returns a syntax tree of the expression **without executing it**. This is the leverage point. If I walk that tree and refuse any node type I did not explicitly bless, I can guarantee no name lookup, no attribute access, no function call, no comprehension, and no lambda ever runs regardless of how devious the input is. Python provides `ast.parse(source, mode="eval")`, which returns a syntax tree of the expression **without executing it**. This is the leverage point. If I walk that tree and refuse any node type I did not explicitly bless, I can prevent unsupported Python constructs from crossing the input boundary. Once the tree is validated, QubitLens recursively interprets only the mathematical nodes and whitelisted names it explicitly supports.
 
 This turns "safe evaluation" from a fuzzy problem into a *whitelist* problem: list the allowed AST node classes, list the allowed identifiers, list the allowed functions. Anything not on those three lists is rejected at the boundary.
 
@@ -110,11 +110,11 @@ The Safe Expression Engine sits under `qubitlens.input.expression`. Its public A
 
 1. reject inputs longer than a hard limit (length DoS),
 2. parse with `ast.parse(..., mode="eval")`, translating any `SyntaxError` into `ExpressionSyntaxError`,
-3. walk the AST, rejecting any node whose class is not in the allowed set (`Expression`, `BinOp`, `UnaryOp`, `Constant`, `Name`, `Call`, `Load`, and a small set of numeric operators),
-4. walk again, rejecting any `Name` whose id is not a whitelisted constant (`pi`, `e`, `tau`, `i`, `j`) or function (`sin`, `cos`, `sqrt`, `exp`, `log`, `abs`, `conj`, `real`, `imag`, `arg`, `pow`), and rejecting any `Call` whose target is not one of those functions,
-5. reject any `Pow` node whose exponent is a huge literal, or whose exponent is itself a `Pow` (this stops `2**10**10`-style CPU DoS),
-6. compile the *already-validated* AST and evaluate it against the whitelisted namespace,
-7. verify the result is finite (`NaN`/`inf` becomes `NonFiniteResultError`),
+3. enforce structural resource limits on AST depth and total node count,
+4. reject any node whose class is not in the allowed set (`Expression`, `BinOp`, `UnaryOp`, `Constant`, `Name`, `Call`, `Load`, and a small set of numeric operators),
+5. validate numeric literals, names, direct function calls, argument structure, and exponent limits,
+6. recursively interpret the validated AST using QubitLens's own evaluator, with explicit handling for literals, constants, binary arithmetic, unary arithmetic, and whitelisted function calls,
+7. verify the resulting complex value is finite (`NaN`/`inf` becomes `NonFiniteResultError`),
 8. return a `complex`.
 
 The whitelist is a data-only module. Adding a new capability to the mini-language is intentionally a two-step change: add the name/function to the whitelist *and* extend the tests. Reviewers see both diffs; nothing sneaks in.
@@ -123,7 +123,7 @@ The whitelist is a data-only module. Adding a new capability to the mini-languag
 
 This phase reshaped how I think about "safe evaluation" more than any other. Three things stuck:
 
-1. **`eval` is dangerous because it takes strings; ASTs are safe because you can inspect them.** The entire security story becomes: *never let user text reach `eval`; only let an AST you've fully walked reach `compile`.*
+1. **Parsing is safer when execution semantics are owned explicitly.** `ast.parse(..., mode="eval")` lets QubitLens inspect user mathematics without executing it, and interpreting only the node types we explicitly support keeps the mini-language separate from Python's general execution machinery.
 2. **Resource limits matter as much as capability limits.** A whitelist that allows `2**10**10` is a whitelist that allows a denial-of-service. Every allowed operator needs a cost story.
 3. **Errors are UX.** Splitting failure into `ExpressionSyntaxError`, `DisallowedNameError`, `DisallowedNodeError`, `ResourceLimitError`, `NonFiniteResultError` (and later `UnboundParameterError`, `InvalidParameterNameError`) means the eventual UI can say *"the character `@` is not allowed"* instead of a generic *"invalid input"*. Structured errors here mean better messages three layers up.
 
@@ -131,6 +131,6 @@ This phase reshaped how I think about "safe evaluation" more than any other. Thr
 
 ## 5. Where the story picks up next
 
-The foundation, the domain, and safe human-math input now exist. The next chapters of this journey — parameter variables and scientific state input — will finish the input boundary. After that the tale shifts from *"can we describe circuits correctly?"* to *"can we execute and inspect them faithfully?"*, and the pieces start to visibly connect: an initial state and a circuit go into a runner, an ordered sequence of intermediate states comes out, and every one of those states becomes a checkpoint the user can click on.
+The foundation, the domain, and safe human-math input now exist. The next chapters of this journey parameter variables and scientific state input will finish the input boundary. After that the tale shifts from *"can we describe circuits correctly?"* to *"can we execute and inspect them faithfully?"*, and the pieces start to visibly connect: an initial state and a circuit go into a runner, an ordered sequence of intermediate states comes out, and every one of those states becomes a checkpoint the user can click on.
 
-The pattern established here — **problem → concept → design → learning** — will repeat in each of those chapters. The goal is that a reader who reaches the end of this document not only understands what QubitLens does, but also has a small library of transferable ideas: AST-as-security-surface, immutable domain modelling, "let the reference engine be the reference", and — perhaps most importantly — the discipline of separating *what the user asked for* from *what happens when you compute it*.
+The pattern established here **problem → concept → design → learning**   will repeat in each of those chapters. The goal is that a reader who reaches the end of this document not only understands what QubitLens does, but also has a small library of transferable ideas: AST-as-security-surface, immutable domain modelling, "let the reference engine be the reference", and   perhaps most importantly the discipline of separating *what the user asked for* from *what happens when you compute it*.

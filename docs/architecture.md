@@ -10,12 +10,13 @@ QubitLens does not aim to replace Qiskit or implement a separate quantum simulat
 
 ## Package Structure
 
-The current source package is organized into four main areas:
+The current source package is organized into five main areas:
 
 ```text
 qubitlens/
 ├── core/
 ├── domain/
+├── input/
 ├── analysis/
 └── explanation/
 ```
@@ -81,6 +82,27 @@ These objects and services represent quantum-domain structure and requirements. 
 The circuit models remain responsible for gate-independent structural invariants and circuit-relative validation. Gate-specific requirements remain separate from the generic circuit representation and are enforced explicitly through catalogue-aware validation.
 
 This separation allows the circuit representation to remain structurally generic while supported gate semantics can evolve through the catalogue without coupling circuit structure to a fixed set of gates.
+
+
+### Input
+
+`qubitlens.input` owns the boundary between human-written mathematical text and validated values consumed by QubitLens.
+
+The current input subsystem provides a safe expression engine for restricted real and complex mathematics. Expressions are parsed into Python abstract syntax trees, validated against an explicit mathematical language, and interpreted directly by QubitLens without using Python's general-purpose `eval()` or `exec()` machinery.
+
+The expression engine supports whitelisted mathematical constants, functions, arithmetic operators, complex values, and grouping while rejecting unsupported Python constructs and identifiers.
+
+The input boundary also enforces resource limits on expression length, AST depth, AST node count, and exponent magnitude, and rejects non-finite results.
+
+The input subsystem does not:
+
+* execute quantum circuits
+* own circuit or gate semantics
+* normalize or validate quantum states
+* interpret gate parameters
+* perform analysis or explanation
+
+Parameter binding and scientific state input extend this boundary later without moving those downstream responsibilities into the parser.
 
 
 ### Analysis
@@ -294,12 +316,15 @@ Tests are organized according to the responsibility they verify.
 tests/
 ├── core/
 ├── domain/
+├── input/
 └── integration/
 ```
 
 Core tests verify QubitLens's mathematical foundations independently.
 
 Domain tests verify circuit representation, structural validation, ordering, immutability, and public domain behavior.
+
+Input tests verify mathematical expression behavior, rejection boundaries, security constraints, and resource limits.
 
 Integration tests verify assumptions that cross the Qiskit boundary.
 

@@ -1,7 +1,7 @@
 """Expression whitelist.
 
 Defines the allowlist of names, functions, operators, and AST nodes
-permitted in QubitLens expressions — anything not listed here is
+permitted in QubitLens expressions anything not listed here is
 rejected.
 """
 
@@ -21,8 +21,28 @@ ALLOWED_CONSTANTS: Mapping[str, complex] = {
 
 
 def _safe_log(z: complex) -> complex:
-    """Build the evaluation namespace from the allowed constants and bindings."""
+    """Return the complex natural logarithm of a value."""
     return cmath.log(z)
+
+
+def _absolute(z: complex) -> complex:
+    """Return the absolute magnitude of a value."""
+    return complex(abs(z))
+
+
+def _real(z: complex) -> complex:
+    """Return the real component of a value."""
+    return complex(z.real)
+
+
+def _imag(z: complex) -> complex:
+    """Return the imaginary component of a value."""
+    return complex(z.imag)
+
+
+def _conjugate(z: complex) -> complex:
+    """Return the complex conjugate of a value."""
+    return z.conjugate()
 
 
 ALLOWED_FUNCTIONS: Mapping[str, Callable[..., complex]] = {
@@ -32,12 +52,11 @@ ALLOWED_FUNCTIONS: Mapping[str, Callable[..., complex]] = {
     "exp": cmath.exp,
     "log": _safe_log,
     "sqrt": cmath.sqrt,
-    "abs": lambda z: abs(z),
-    "real": lambda z: complex(z).real,
-    "imag": lambda z: complex(z).imag,
-    "conj": lambda z: complex(z).conjugate(),
+    "abs": _absolute,
+    "real": _real,
+    "imag": _imag,
+    "conj": _conjugate,
     "arg": cmath.phase,
-    "pow": lambda x, y: x**y,
 }
 
 ALLOWED_AST_NODES: frozenset[type[ast.AST]] = frozenset(

@@ -1,4 +1,4 @@
-# QubitLens — Public Python API Reference
+# QubitLens  Public Python API Reference
 
 *Reference for the intended public interface of the `qubitlens` package. Internal helpers (any name starting with `_`) are documented only in their source docstrings and are not covered here.*
 
@@ -50,17 +50,17 @@ Immutable wrapper around a normalised complex amplitude vector.
 PureState(amplitudes: numpy.ndarray)
 ```
 
-- **`amplitudes`** — 1-D complex array of length `2**num_qubits`. Must be finite and ℓ²-normalised.
+- **`amplitudes`**   1-D complex array of length `2**num_qubits`. Must be finite and ℓ²-normalised.
 
 **Raises**
 
-- `ValueError` — length is not a power of two, contains `NaN`/`inf`, or is not normalised within numerical tolerance.
+- `ValueError`   length is not a power of two, contains `NaN`/`inf`, or is not normalised within numerical tolerance.
 
 **Properties**
 
-- **`amplitudes`** — the underlying `numpy.ndarray` (read-only view).
-- **`num_qubits`** — `int`, inferred from the length of `amplitudes`.
-- **`probabilities`** — `numpy.ndarray` of `float`, the per-basis-state probabilities.
+- **`amplitudes`**   the underlying `numpy.ndarray` (read-only view).
+- **`num_qubits`**   `int`, inferred from the length of `amplitudes`.
+- **`probabilities`**   `numpy.ndarray` of `float`, the per-basis-state probabilities.
 
 **Example**
 
@@ -80,19 +80,19 @@ Lift a `2 × 2` single-qubit unitary into the full `2ⁿ × 2ⁿ` operator that 
 embed_single_qubit(gate: numpy.ndarray, qubit: int, num_qubits: int) -> numpy.ndarray
 ```
 
-- **`gate`** — a `(2, 2)` complex array.
-- **`qubit`** — target qubit index in `[0, num_qubits)`.
-- **`num_qubits`** — total qubit count.
+- **`gate`**   a `(2, 2)` complex array.
+- **`qubit`**   target qubit index in `[0, num_qubits)`.
+- **`num_qubits`**   total qubit count.
 
-**Returns** — a `(2**num_qubits, 2**num_qubits)` complex array.
+**Returns**   a `(2**num_qubits, 2**num_qubits)` complex array.
 
-**Raises** — `ValueError` if `gate` is not `(2, 2)`, if `qubit` is out of range, or if `num_qubits` is not a positive integer.
+**Raises**   `ValueError` if `gate` is not `(2, 2)`, if `qubit` is out of range, or if `num_qubits` is not a positive integer.
 
 ---
 
 ## `qubitlens.domain`
 
-Semantic QubitLens objects. Everything downstream (execution, trace, explanation, visualisation) consumes these — never raw numpy.
+Semantic QubitLens objects. Everything downstream (execution, trace, explanation, visualisation) consumes these   never raw numpy.
 
 ### `qubitlens.domain.Circuit`
 
@@ -104,14 +104,14 @@ Immutable, ordered collection of operations over a fixed number of qubits.
 Circuit(num_qubits: int)
 ```
 
-- **`num_qubits`** — total number of qubits, `1 ≤ num_qubits ≤ 10`.
+- **`num_qubits`**   total number of qubits, `1 ≤ num_qubits ≤ 10`.
 
-**Raises** — `ValueError` if `num_qubits` is outside the allowed range.
+**Raises**   `ValueError` if `num_qubits` is outside the allowed range.
 
 **Properties**
 
-- **`num_qubits`** — `int`, the qubit count.
-- **`operations`** — `tuple[Operation, ...]`, ordered operations applied to the circuit.
+- **`num_qubits`**   `int`, the qubit count.
+- **`operations`**   `tuple[Operation, ...]`, ordered operations applied to the circuit.
 
 **Methods**
 
@@ -127,13 +127,13 @@ append_gate(
 
 Returns a **new** `Circuit` with the operation appended. The receiver is not mutated.
 
-- **`name`** — must be a key in `qubitlens.domain.gates.CATALOGUE`.
-- **`targets` / `controls`** — qubit indices in `[0, num_qubits)`. Must have the arity declared by the catalogue entry for `name`.
-- **`parameters`** — string expressions (validated later by the execution layer against the parameter count declared in the catalogue).
+- **`name`**   must be a key in `qubitlens.domain.gates.CATALOGUE`.
+- **`targets` / `controls`**   qubit indices in `[0, num_qubits)`. Must have the arity declared by the catalogue entry for `name`.
+- **`parameters`**   string expressions (validated later by the execution layer against the parameter count declared in the catalogue).
 
 **Raises**
 
-- `ValueError` — unknown gate name, target/control arity mismatch, out-of-range qubit index, target/control overlap, wrong parameter count.
+- `ValueError`   unknown gate name, target/control arity mismatch, out-of-range qubit index, target/control overlap, wrong parameter count.
 
 **Example**
 
@@ -153,10 +153,10 @@ Immutable record describing a single gate application inside a `Circuit`.
 
 **Fields**
 
-- **`gate_name`** — `str`, catalogue key.
-- **`targets`** — `tuple[int, ...]`.
-- **`controls`** — `tuple[int, ...]`.
-- **`parameters`** — `tuple[str, ...]`.
+- **`gate_name`**   `str`, catalogue key.
+- **`targets`**   `tuple[int, ...]`.
+- **`controls`**   `tuple[int, ...]`.
+- **`parameters`**   `tuple[str, ...]`.
 
 Users generally do not construct `Operation` directly; use `Circuit.append_gate(...)`.
 
@@ -174,9 +174,9 @@ Immutable metadata about a supported gate.
 
 **Fields**
 
-- **`name`** — canonical, lowercase catalogue key (e.g. `"h"`, `"cx"`, `"rx"`).
-- **`display_name`** — human-readable name (e.g. `"Hadamard"`, `"CNOT"`).
-- **`num_targets`**, **`num_controls`**, **`num_parameters`** — arity declarations.
+- **`name`**   canonical, lowercase catalogue key (e.g. `"h"`, `"cx"`, `"rx"`).
+- **`display_name`**   human-readable name (e.g. `"Hadamard"`, `"CNOT"`).
+- **`num_targets`**, **`num_controls`**, **`num_parameters`**   arity declarations.
 
 #### `qubitlens.domain.gates.CATALOGUE`
 
@@ -201,9 +201,9 @@ Immutable pure initial state used as the starting point of a `Circuit`.
 InitialState(amplitudes: numpy.ndarray)
 ```
 
-- **`amplitudes`** — complex 1-D array of length `2**num_qubits`. Must be finite and ℓ²-normalised.
+- **`amplitudes`**   complex 1-D array of length `2**num_qubits`. Must be finite and ℓ²-normalised.
 
-**Raises** — `ValueError` if length is not a power of two, or the vector is not finite/normalised.
+**Raises**   `ValueError` if length is not a power of two, or the vector is not finite/normalised.
 
 **Class methods**
 
@@ -215,8 +215,8 @@ Convenience constructor for the canonical `|0…0⟩` state on `num_qubits` qubi
 
 **Properties**
 
-- **`amplitudes`** — the underlying `numpy.ndarray` (read-only view).
-- **`num_qubits`** — inferred from the amplitude vector.
+- **`amplitudes`**   the underlying `numpy.ndarray` (read-only view).
+- **`num_qubits`**   inferred from the amplitude vector.
 
 **Example**
 
@@ -244,17 +244,17 @@ Safely evaluate a restricted real/complex mathematical expression.
 evaluate(expression: str) -> complex
 ```
 
-- **`expression`** — a string in the QubitLens expression mini-language (see the surface summary below).
+- **`expression`**   a string in the QubitLens expression mini-language (see the surface summary below).
 
-**Returns** — a `complex` result.
+**Returns**   a `complex` result.
 
 **Raises**
 
-- `ExpressionSyntaxError` — the string is not syntactically valid, is empty, or is not a string.
-- `DisallowedNameError` — the expression references a name that is neither a whitelisted constant nor a whitelisted function.
-- `DisallowedNodeError` — the expression uses an AST construct not on the whitelist (e.g. attribute access, subscript, lambda, comprehension, conditional expression, comparison, boolean operator, formatted string, tuple).
-- `ResourceLimitError` — the expression exceeds a length, AST-depth, or exponent-magnitude limit.
-- `NonFiniteResultError` — evaluation produced `NaN` or an infinity (e.g. `1/0`, `log(0)`).
+- `ExpressionSyntaxError`   the string is not syntactically valid, is empty, or is not a string.
+- `DisallowedNameError`   the expression references a name that is neither a whitelisted constant nor a whitelisted function.
+- `DisallowedNodeError`   the expression uses an AST construct not on the whitelist (e.g. attribute access, subscript, lambda, comprehension, conditional expression, comparison, boolean operator, formatted string, tuple).
+- `ResourceLimitError`  the expression exceeds a length, AST-depth, AST-node-count, or exponent-magnitude limit.
+- `NonFiniteResultError`   evaluation produced `NaN` or an infinity (e.g. `1/0`, `log(0)`).
 
 All of the above inherit from `InputError`, so callers who only need coarse-grained handling can write `except InputError`.
 
@@ -269,7 +269,7 @@ All of the above inherit from `InputError`, so callers who only need coarse-grai
 
 **Supported functions**
 
-`sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, `abs`, `conj`, `real`, `imag`, `arg`, `pow`.
+`sin`, `cos`, `tan`, `exp`, `log`, `sqrt`, `abs`, `conj`, `real`, `imag`, `arg`.
 
 **Supported operators**
 
@@ -279,12 +279,13 @@ All of the above inherit from `InputError`, so callers who only need coarse-grai
 
 - Maximum expression length: `MAX_EXPRESSION_LENGTH` (default `512` characters).
 - Maximum AST depth: `MAX_AST_DEPTH` (default `32`).
+- Maximum AST node count: `MAX_AST_NODES` (default `128`).
 - Maximum exponent magnitude for numeric-literal exponents: `MAX_ABS_EXPONENT` (default `1024`). Stacked exponents (`a ** b ** c`) are refused outright.
 
 **Examples**
 
 ```python
-from qubitlens.input.expression import evaluate
+from qubitlens.input import evaluate
 
 evaluate("1/sqrt(2)")  # 0.7071067811865476+0j
 evaluate("exp(i*pi)")  # ~ -1+0j
@@ -314,21 +315,19 @@ Public exception hierarchy for the input subsystem. All members inherit from `In
 | `ExpressionSyntaxError` | The expression is not syntactically valid Python-compatible mathematics, is empty, or is not a string. |
 | `DisallowedNameError` | An identifier is neither a whitelisted constant nor a whitelisted function. |
 | `DisallowedNodeError` | An AST construct outside the whitelist appears in the expression. |
-| `ResourceLimitError` | A length, depth, or exponent limit was exceeded. |
+| `ResourceLimitError` | An expression length, AST depth, AST node-count, or exponent-magnitude limit was exceeded. |
 | `NonFiniteResultError` | Evaluation produced a `NaN` or infinity. |
 
 All exceptions can be caught individually for precise error messages, or collectively via `InputError` for coarse handling.
 
 ---
 
-## Package roots
+## Input package exports
 
-The following names are re-exported at the package root for convenience once they are considered public:
+The Safe Expression Engine is available through the `qubitlens.input` package:
 
 ```python
-# from Phase 2.1 onwards
-from qubitlens.input import evaluate
-from qubitlens.input.errors import InputError
+from qubitlens.input import InputError, evaluate
 ```
 
-Additional re-exports (parameter variables, scientific state input constructors, execution helpers, tracing, explanation) will appear here as their milestones complete.
+Additional public input capabilities will be exposed here as parameter variables and scientific state input land.

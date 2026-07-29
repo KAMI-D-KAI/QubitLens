@@ -53,7 +53,7 @@ A checked box means the capability lives in the current codebase and is covered 
 
 ## Where we are right now
 
-The **quantum foundation** and **quantum domain** are complete and locked down by 128 passing tests. Active work is on the **mathematical input** system: turning human-typed maths into validated QubitLens values without ever running user code as Python.
+The **quantum foundation**, **quantum domain**, and **safe expression engine** are complete and locked down by the project test suite. Active work is on the remaining **mathematical input** capabilities: named parameter variables and scientific state input.
 
 Once mathematical input closes, the next milestones are Qiskit-backed execution and the operation-by-operation trace engine, which together unlock the visual experience.
 
@@ -93,7 +93,7 @@ CLI       ──┘
 └─────────────────────────────┘
 ```
 
-Qiskit is used as the execution and reference layer; QubitLens does not attempt to reimplement it. Everything the user sees. the builder, the checkpoints, the explanations, the exports — lives above Qiskit and passes through QubitLens's own semantic model.
+Qiskit is used as the execution and reference layer; QubitLens does not attempt to reimplement it. Everything the user sees. the builder, the checkpoints, the explanations, the exports lives above Qiskit and passes through QubitLens's own semantic model.
 
 ---
 
@@ -116,9 +116,9 @@ pytest -m integration -q
 ## Documentation
 
 - [`docs/architecture.md`](docs/architecture.md) — layers, responsibilities, conventions
-- [`docs/journey.md`](docs/journey.md) — the engineering story behind each capability *(coming soon)*
-- [`docs/api.md`](docs/api.md) — public Python API reference *(coming soon)*
+- [`docs/journey.md`](docs/journey.md) — curated engineering and learning journey
+- [`docs/api.md`](docs/api.md) — public Python API reference
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT see [LICENSE](LICENSE).

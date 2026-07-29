@@ -16,7 +16,7 @@ class ExpressionSyntaxError(InputError):
 
 
 class DisallowedNameError(InputError):
-    """An identifier is not in the whitelist and is not a bound parameter."""
+    """An identifier is not permitted by the expression whitelist."""
 
 
 class DisallowedNodeError(InputError):
