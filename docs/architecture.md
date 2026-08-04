@@ -102,7 +102,7 @@ The input subsystem does not:
 * interpret gate parameters
 * perform analysis or explanation
 
-Parameter binding and scientific state input extend this boundary later without moving those downstream responsibilities into the parser.
+The input subsystem also provides symbolic parameter binding and scientific state input while remaining solely responsible for translating human-written mathematical input into validated QubitLens values.
 
 
 ### Analysis

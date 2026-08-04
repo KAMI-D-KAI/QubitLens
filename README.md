@@ -27,8 +27,8 @@ A checked box means the capability lives in the current codebase and is covered 
 
 ### Mathematical input *(current work)*
 - [x] Safe expression engine parse and evaluate real/complex maths with **no** arbitrary code execution
-- [ ] Named parameter variables (`theta`, `phi`, …) with safe binding at evaluation time
-- [ ] Scientific state input from full vectors, basis-state dicts, or sparse dicts, with symbolic amplitudes
+- [x] Named parameter variables (`theta`, `phi`, …) with safe binding at evaluation time
+- [x] Scientific state input from full vectors, basis-state dicts, or sparse dicts, with symbolic amplitudes
 
 ### Execution & tracing
 - [ ] Qiskit-backed statevector execution with explicit little-endian semantics
@@ -53,9 +53,9 @@ A checked box means the capability lives in the current codebase and is covered 
 
 ## Where we are right now
 
-The **quantum foundation**, **quantum domain**, and **safe expression engine** are complete and locked down by the project test suite. Active work is on the remaining **mathematical input** capabilities: named parameter variables and scientific state input.
+The **quantum foundation**, **quantum domain**, and **mathematical input** subsystem are complete and covered by the project test suite.
 
-Once mathematical input closes, the next milestones are Qiskit-backed execution and the operation-by-operation trace engine, which together unlock the visual experience.
+Current development now moves to **Qiskit-backed execution** and the **operation-by-operation trace engine**, which together unlock the visual experience and later analysis features.
 
 ---
 

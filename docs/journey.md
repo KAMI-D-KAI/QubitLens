@@ -129,8 +129,28 @@ This phase reshaped how I think about "safe evaluation" more than any other. Thr
 
 ---
 
-## 5. Where the story picks up next
+## 5. Turning mathematical expressions into reusable quantum inputs
 
-The foundation, the domain, and safe human-math input now exist. The next chapters of this journey parameter variables and scientific state input will finish the input boundary. After that the tale shifts from *"can we describe circuits correctly?"* to *"can we execute and inspect them faithfully?"*, and the pieces start to visibly connect: an initial state and a circuit go into a runner, an ordered sequence of intermediate states comes out, and every one of those states becomes a checkpoint the user can click on.
+### Problem
 
-The pattern established here **problem → concept → design → learning**   will repeat in each of those chapters. The goal is that a reader who reaches the end of this document not only understands what QubitLens does, but also has a small library of transferable ideas: AST-as-security-surface, immutable domain modelling, "let the reference engine be the reference", and   perhaps most importantly the discipline of separating *what the user asked for* from *what happens when you compute it*.
+The expression engine could safely evaluate mathematical expressions, but quantum circuits also require symbolic gate parameters and flexible ways to describe initial quantum states. Users should be able to write expressions such as `theta`, `cos(theta / 2)`, or `1/sqrt(2)` without embedding values directly into every expression.
+
+### Concept
+
+Separating symbolic variables from their values makes mathematical expressions reusable. Parameter values are supplied only when evaluation occurs, while scientific state descriptions allow complete quantum states to be written naturally as vectors or sparse representations instead of raw arrays.
+
+### Design & implementation
+
+The input subsystem now supports immutable symbolic parameters, safe parameter binding during evaluation, and scientific state construction from full vectors, computational-basis dictionaries, and sparse dictionaries. Every mathematical expression continues to pass through the same validated expression engine before becoming part of an `InitialState`.
+
+### Learning
+
+Separating parsing from binding simplified the overall architecture. The expression engine remains responsible only for interpreting mathematics, while parameter values are supplied explicitly by callers. Extending the same evaluation pipeline to state preparation avoided duplicate parsing logic and kept the entire mathematical input boundary consistent.
+
+---
+
+## 6. Where the story picks up next
+
+The foundation, the domain, and the mathematical input boundary are now complete. The next stage shifts from describing circuits to executing them through Qiskit, recording every intermediate quantum state, and building the trace engine that powers inspection, explanation, and visualization.
+
+The pattern established here **problem → concept → design → learning** will continue through the remaining chapters. The goal is that a reader who reaches the end of this document not only understands what QubitLens does, but also carries forward transferable engineering ideas: immutable domain modelling, AST-based input validation, explicit responsibility boundaries, and separating *what the user asked for* from *what happens when it is executed*.

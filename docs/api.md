@@ -2,7 +2,7 @@
 
 *Reference for the intended public interface of the `qubitlens` package. Internal helpers (any name starting with `_`) are documented only in their source docstrings and are not covered here.*
 
-**Scope of this document:** everything shipped through the completion of the Safe Expression Engine. Subsequent capabilities (parameter variables, scientific state input, execution, tracing, explanation, analysis, export, animation) will be added to this file as they land.
+**Scope of this document:** everything currently available in the public QubitLens API. Additional execution, tracing, analysis, explanation, visualization, export, and animation capabilities will be documented here as they become part of the public interface.
 
 **Conventions used throughout:**
 
@@ -197,7 +197,7 @@ Immutable pure initial state used as the starting point of a `Circuit`.
 
 **Constructor**
 
-```
+```python
 InitialState(amplitudes: numpy.ndarray)
 ```
 
@@ -207,7 +207,7 @@ InitialState(amplitudes: numpy.ndarray)
 
 **Class methods**
 
-```
+```python
 InitialState.zero(num_qubits: int) -> InitialState
 ```
 
@@ -240,18 +240,25 @@ The sole boundary between human-typed mathematical text and validated QubitLens 
 
 Safely evaluate a restricted real/complex mathematical expression.
 
-```
-evaluate(expression: str) -> complex
+```python
+evaluate(
+    expression: str,
+    bindings: Mapping[str, complex] | None = None,
+) -> complex
+
 ```
 
 - **`expression`**   a string in the QubitLens expression mini-language (see the surface summary below).
+
+- **`bindings`**   optional mapping from symbolic parameter names to complex values used during evaluation.
 
 **Returns**   a `complex` result.
 
 **Raises**
 
 - `ExpressionSyntaxError`   the string is not syntactically valid, is empty, or is not a string.
-- `DisallowedNameError`   the expression references a name that is neither a whitelisted constant nor a whitelisted function.
+- `UnboundParameterError`   a parameter name appears in the expression but no value was supplied.
+- `DisallowedNameError`   the expression references a disallowed identifier.
 - `DisallowedNodeError`   the expression uses an AST construct not on the whitelist (e.g. attribute access, subscript, lambda, comprehension, conditional expression, comparison, boolean operator, formatted string, tuple).
 - `ResourceLimitError`  the expression exceeds a length, AST-depth, AST-node-count, or exponent-magnitude limit.
 - `NonFiniteResultError`   evaluation produced `NaN` or an infinity (e.g. `1/0`, `log(0)`).
@@ -305,6 +312,32 @@ except ResourceLimitError:
     ...
 ```
 
+### `qubitlens.input.Parameter`
+
+Immutable symbolic parameter placeholder.
+
+```python
+Parameter(name: str)
+```
+
+Represents a named variable whose value is supplied later through expression bindings.
+
+**Raises**
+
+- `InvalidParameterNameError` if the name is not a valid identifier or shadows a reserved constant or function.
+
+### `qubitlens.input.extract_parameters`
+
+```python
+extract_parameters(expression: str) -> frozenset[str]
+```
+
+Returns every symbolic parameter referenced by an expression.
+
+**Raises**
+
+- `ExpressionSyntaxError` if the expression cannot be parsed.
+
 ### `qubitlens.input.errors`
 
 Public exception hierarchy for the input subsystem. All members inherit from `InputError`.
@@ -317,6 +350,8 @@ Public exception hierarchy for the input subsystem. All members inherit from `In
 | `DisallowedNodeError` | An AST construct outside the whitelist appears in the expression. |
 | `ResourceLimitError` | An expression length, AST depth, AST node-count, or exponent-magnitude limit was exceeded. |
 | `NonFiniteResultError` | Evaluation produced a `NaN` or infinity. |
+| `UnboundParameterError` | A symbolic parameter has no supplied value. |
+| `InvalidParameterNameError` | A parameter name is invalid or shadows a reserved identifier. |
 
 All exceptions can be caught individually for precise error messages, or collectively via `InputError` for coarse handling.
 
@@ -326,8 +361,14 @@ All exceptions can be caught individually for precise error messages, or collect
 
 The Safe Expression Engine is available through the `qubitlens.input` package:
 
+
 ```python
-from qubitlens.input import InputError, evaluate
+from qubitlens.input import (
+    InputError,
+    Parameter,
+    evaluate,
+    extract_parameters,
+)
 ```
 
-Additional public input capabilities will be exposed here as parameter variables and scientific state input land.
+The input package now exposes the safe expression engine, symbolic parameter support, and scientific state input utilities.
