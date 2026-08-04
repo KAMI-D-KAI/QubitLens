@@ -3,7 +3,14 @@ import math
 
 import pytest
 
+from qubitlens.input.errors import (
+    InvalidParameterNameError,
+)
 from qubitlens.input.expression import evaluate
+from qubitlens.input.parameters import (
+    Parameter,
+    extract_parameters,
+)
 
 
 @pytest.mark.parametrize(
@@ -81,3 +88,33 @@ def test_evaluate_always_returns_complex() -> None:
 
     assert isinstance(result, complex)
     assert result == 5 + 0j
+
+
+def test_parameter_binding() -> None:
+    assert evaluate("theta + 1", {"theta": 2}) == pytest.approx(3 + 0j)
+
+
+def test_multiple_parameter_bindings() -> None:
+    assert evaluate(
+        "theta + phi",
+        {"theta": 2, "phi": 3},
+    ) == pytest.approx(5 + 0j)
+
+
+def test_extract_parameters() -> None:
+    assert extract_parameters("theta + phi + sin(alpha)") == frozenset(
+        {"theta", "phi", "alpha"}
+    )
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["pi", "e", "tau", "sin", "sqrt"],
+)
+def test_invalid_parameter_names(name: str) -> None:
+    with pytest.raises(InvalidParameterNameError):
+        Parameter(name)
+
+
+def test_valid_parameter() -> None:
+    assert Parameter("theta").name == "theta"

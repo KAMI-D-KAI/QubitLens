@@ -1,8 +1,4 @@
-"""Input-subsystem exception hierarchy.
-
-Defines the InputError hierarchy so all input-subsystem failures can
-be caught with a single except clause.
-"""
+"""Public exception hierarchy for the QubitLens input subsystem."""
 
 from __future__ import annotations
 
@@ -16,7 +12,7 @@ class ExpressionSyntaxError(InputError):
 
 
 class DisallowedNameError(InputError):
-    """An identifier is not permitted by the expression whitelist."""
+    """An identifier is not in the whitelist and is not a bound parameter."""
 
 
 class DisallowedNodeError(InputError):
@@ -29,3 +25,11 @@ class ResourceLimitError(InputError):
 
 class NonFiniteResultError(InputError):
     """Evaluation produced NaN or infinity."""
+
+
+class UnboundParameterError(InputError):
+    """A parameter appeared in the expression but no value was supplied."""
+
+
+class InvalidParameterNameError(InputError):
+    """A parameter name is not a valid identifier or shadows a whitelisted name."""

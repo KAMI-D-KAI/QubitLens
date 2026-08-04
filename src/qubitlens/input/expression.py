@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import ast
 import math
+from collections.abc import Callable, Mapping
+from typing import cast
 
 from qubitlens.input.errors import (
     DisallowedNameError,
@@ -15,6 +17,7 @@ from qubitlens.input.errors import (
     ExpressionSyntaxError,
     NonFiniteResultError,
     ResourceLimitError,
+    UnboundParameterError,
 )
 from qubitlens.input.whitelist import (
     ALLOWED_AST_NODES,
@@ -28,7 +31,10 @@ MAX_AST_NODES = 128
 MAX_ABS_EXPONENT = 1024.0
 
 
-def evaluate(expression: str) -> complex:
+def evaluate(
+    expression: str,
+    bindings: Mapping[str, complex] | None = None,
+) -> complex:
     """Evaluate a restricted mathematical expression as a finite complex value.
 
     Raises:
@@ -50,10 +56,11 @@ def evaluate(expression: str) -> complex:
     _validate_nodes(tree)
     _validate_constants(tree)
     _validate_exponents(tree)
-    _validate_names(tree)
+    namespace = _build_namespace(bindings)
+    _validate_names(tree, namespace)
 
     try:
-        result = _evaluate_node(tree.body)
+        result = _evaluate_node(tree.body, namespace)
     except (ZeroDivisionError, ValueError, OverflowError) as exc:
         raise NonFiniteResultError(str(exc)) from exc
 
@@ -70,7 +77,10 @@ def _parse(expression: str) -> ast.Expression:
         raise ExpressionSyntaxError(str(exc)) from exc
 
 
-def _evaluate_node(node: ast.AST) -> complex | int | float:
+def _evaluate_node(
+    node: ast.AST,
+    namespace: Mapping[str, complex | object],
+) -> complex | int | float:
     """Evaluate one validated expression AST node."""
     if isinstance(node, ast.Constant):
         value = node.value
@@ -83,13 +93,16 @@ def _evaluate_node(node: ast.AST) -> complex | int | float:
         return value
 
     if isinstance(node, ast.Name):
-        if node.id in ALLOWED_CONSTANTS:
-            return ALLOWED_CONSTANTS[node.id]
-        raise DisallowedNameError(f"name {node.id} is not a numeric constant.")
+        value = cast(complex, namespace[node.id])
+        if callable(value):
+            raise DisallowedNodeError(
+                f"'{node.id}' is a function and cannot be used as a value."
+            )
+        return complex(value)
 
     if isinstance(node, ast.BinOp):
-        left = _evaluate_node(node.left)
-        right = _evaluate_node(node.right)
+        left = _evaluate_node(node.left, namespace)
+        right = _evaluate_node(node.right, namespace)
 
         if isinstance(node.op, ast.Add):
             return left + right
@@ -107,7 +120,7 @@ def _evaluate_node(node: ast.AST) -> complex | int | float:
         )
 
     if isinstance(node, ast.UnaryOp):
-        operand = _evaluate_node(node.operand)
+        operand = _evaluate_node(node.operand, namespace)
 
         if isinstance(node.op, ast.UAdd):
             return +operand
@@ -125,8 +138,8 @@ def _evaluate_node(node: ast.AST) -> complex | int | float:
         if node.func.id not in ALLOWED_FUNCTIONS:
             raise DisallowedNameError(f"function {node.func.id} is not allowed.")
 
-        function = ALLOWED_FUNCTIONS[node.func.id]
-        arguments = tuple(_evaluate_node(argument) for argument in node.args)
+        function = cast(Callable[..., complex], namespace[node.func.id])
+        arguments = tuple(_evaluate_node(argument, namespace) for argument in node.args)
 
         return complex(function(*arguments))
 
@@ -171,12 +184,22 @@ def _validate_constants(tree: ast.AST) -> None:
                 )
 
 
-def _validate_names(tree: ast.AST) -> None:
+def _validate_names(
+    tree: ast.AST,
+    namespace: Mapping[str, object],
+) -> None:
     """Validate that all names in the AST are in the expression whitelist."""
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            if node.id not in ALLOWED_CONSTANTS and node.id not in ALLOWED_FUNCTIONS:
-                raise DisallowedNameError(f"name {node.id} is not allowed.")
+            if node.id not in namespace:
+                if (
+                    node.id.isidentifier()
+                    and node.id not in ALLOWED_CONSTANTS
+                    and node.id not in ALLOWED_FUNCTIONS
+                ):
+                    raise UnboundParameterError(f"Parameter '{node.id}' has no value.")
+
+                raise DisallowedNameError(f"Name '{node.id}' is not allowed.")
 
         if isinstance(node, ast.Call):
             if not isinstance(node.func, ast.Name):
@@ -226,6 +249,26 @@ def _validate_exponents(tree: ast.AST) -> None:
 
         if abs(value) > MAX_ABS_EXPONENT:
             raise ResourceLimitError(f"exponent {value} exceeds {MAX_ABS_EXPONENT}.")
+
+
+def _build_namespace(
+    bindings: Mapping[str, complex] | None,
+) -> dict[str, object]:
+    """Build the evaluation namespace."""
+
+    namespace: dict[str, object] = {}
+
+    namespace.update(ALLOWED_FUNCTIONS)
+    namespace.update(ALLOWED_CONSTANTS)
+
+    if bindings:
+        for name, value in bindings.items():
+            if name in ALLOWED_CONSTANTS or name in ALLOWED_FUNCTIONS:
+                continue
+
+            namespace[name] = complex(value)
+
+    return namespace
 
 
 def _validate_finite_result(result: complex) -> None:

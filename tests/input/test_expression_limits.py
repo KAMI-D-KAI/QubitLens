@@ -1,6 +1,10 @@
 import pytest
 
-from qubitlens.input.errors import NonFiniteResultError, ResourceLimitError
+from qubitlens.input.errors import (
+    DisallowedNodeError,
+    NonFiniteResultError,
+    ResourceLimitError,
+)
 from qubitlens.input.expression import (
     MAX_ABS_EXPONENT,
     MAX_AST_DEPTH,
@@ -68,3 +72,8 @@ def test_stacked_exponent_is_rejected() -> None:
 def test_non_finite_results_are_rejected(expression: str) -> None:
     with pytest.raises(NonFiniteResultError):
         evaluate(expression)
+
+
+def test_function_name_used_as_value() -> None:
+    with pytest.raises(DisallowedNodeError):
+        evaluate("sin + 1")

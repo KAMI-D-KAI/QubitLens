@@ -5,9 +5,12 @@ from qubitlens.input.errors import (
     DisallowedNodeError,
     ExpressionSyntaxError,
     InputError,
+    InvalidParameterNameError,
     NonFiniteResultError,
+    UnboundParameterError,
 )
 from qubitlens.input.expression import evaluate
+from qubitlens.input.parameters import Parameter
 
 
 @pytest.mark.parametrize("expression", ["", "   ", "\t\n"])
@@ -39,14 +42,15 @@ def test_non_string_input_is_rejected(expression: object) -> None:
 @pytest.mark.parametrize(
     "expression",
     [
-        "theta",
         "unknown",
         "os",
         "eval",
     ],
 )
-def test_unknown_names_are_rejected(expression: str) -> None:
-    with pytest.raises(DisallowedNameError):
+def test_unknown_names_are_reported_as_unbound_parameters(
+    expression: str,
+) -> None:
+    with pytest.raises(UnboundParameterError):
         evaluate(expression)
 
 
@@ -159,3 +163,29 @@ def test_invalid_numeric_evaluation_uses_input_error(
 def test_python_execution_paths_are_rejected(expression: str) -> None:
     with pytest.raises(InputError):
         evaluate(expression)
+
+
+def test_unbound_parameter_is_rejected() -> None:
+    with pytest.raises(UnboundParameterError):
+        evaluate("theta")
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "pi",
+        "e",
+        "tau",
+        "sin",
+        "sqrt",
+        "1theta",
+        "",
+    ],
+)
+def test_invalid_parameter_names(name: str) -> None:
+    with pytest.raises(InvalidParameterNameError):
+        Parameter(name)
+
+
+def test_bound_parameter_is_allowed() -> None:
+    assert evaluate("theta + 1", {"theta": 2}) == pytest.approx(3 + 0j)
